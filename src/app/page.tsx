@@ -45,8 +45,17 @@ export default function HomePage() {
         {/* PREMIUM HERO SECTION */}
         <header className="w-full flex flex-col items-center text-center space-y-8">
           <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 py-1.5 bg-primary/5 backdrop-blur-sm text-primary/60 text-[9px] font-black uppercase tracking-[0.3em] rounded-full border border-primary/10"
+          >
+            Voice Protocol Beta: Full activation imminent. Experience secure text chat for now.
+          </motion.div>
+
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
             className="group relative inline-flex items-center gap-2.5 px-5 py-2 bg-accent/40 backdrop-blur-md text-primary text-[10px] font-black uppercase tracking-[0.2em] rounded-full border border-primary/20 shadow-xl"
           >
             <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
