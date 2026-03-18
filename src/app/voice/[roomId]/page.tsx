@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import VoiceControls from '@/components/VoiceControls';
-import { WebRTCManager } from '@/lib/webrtc';
+import { PeerJSManager } from '@/lib/webrtc';
 import { supabase } from '@/lib/supabaseClient';
 import { findMatch } from '@/lib/matching';
 import { detectIdentity, UserIdentity } from '@/lib/identity';
@@ -35,7 +35,7 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
   const [partnerIdentity, setPartnerIdentity] = useState<UserIdentity | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
   
-  const webrtcRef = useRef<WebRTCManager | null>(null);
+  const webrtcRef = useRef<PeerJSManager | null>(null);
   const rematchChannelRef = useRef<any>(null);
 
   // Monitor Firebase Connection Errors
@@ -104,23 +104,26 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
           
           console.log('Is Initiator:', isInitiator);
           
-          const manager = new WebRTCManager(roomId, myId!);
+          const manager = new PeerJSManager(roomId, myId!);
           webrtcRef.current = manager;
-          manager.init(isInitiator, (stream) => {
+          manager.init(isInitiator, null, (stream) => {
               console.log('Remote stream received');
               if (isMounted) {
                   setRemoteStream(stream);
                   setStatus('connected');
               }
+          }, (err) => {
+              console.error('PeerJS init error:', err);
+              if (!isMounted) return;
+              if (err.includes('Microphone')) {
+                  setToast({ message: "Microphone access is required to use Voice Chat.", type: "error" });
+              } else {
+                  setToast({ message: "Failed to initialize voice. Try skipping.", type: "error" });
+              }
+              setStatus('disconnected');
           });
       } catch (err: any) {
-          console.error('Voice Init Error:', err);
-          if (!isMounted) return;
-          if (err.message && err.message.includes('Microphone')) {
-              setToast({ message: "Microphone access is required to use Voice Chat.", type: "error" });
-          } else {
-              setToast({ message: "Failed to initialize voice. Try skipping.", type: "error" });
-          }
+          console.error('Voice Room Setup Error:', err);
       }
     }
     initVoice();
