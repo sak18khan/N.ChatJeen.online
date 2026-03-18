@@ -39,6 +39,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   const [roomId, setRoomId] = useState(initialRoomId);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
+  const [lastMessageSent, setLastMessageSent] = useState(0);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
   const [isGeneratingIcebreaker, setIsGeneratingIcebreaker] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>('connected');
@@ -360,7 +361,28 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
-    const content = inputText;
+    
+    // Anti-spam filters
+    const now = Date.now();
+    if (now - lastMessageSent < 700) {
+       setToast({ message: "Sending too fast! Please slow down.", type: 'info' });
+       return;
+    }
+    if (inputText.length > 500) {
+       setToast({ message: "Message is too long. Max 500 characters.", type: 'error' });
+       return;
+    }
+
+    setLastMessageSent(now);
+    
+    // Basic obscenity filter (client-side mitigation)
+    const badWords = ['fuck', 'shit', 'bitch', 'asshole', 'nigger', 'faggot'];
+    let content = inputText;
+    badWords.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        content = content.replace(regex, '***');
+    });
+
     setInputText('');
     
     supabase.channel(`chat_room:${roomId}`).send({

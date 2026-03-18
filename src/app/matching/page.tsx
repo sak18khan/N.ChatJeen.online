@@ -45,6 +45,17 @@ function MatchingContent() {
         const startMatching = async () => {
             setStatus('searching');
             
+            // Anti-spam cooldown
+            const lastMatchStr = localStorage.getItem('chatjeen_last_match_time');
+            if (lastMatchStr) {
+                const lastMatchInt = parseInt(lastMatchStr, 10);
+                if (Date.now() - lastMatchInt < 1500) {
+                    setError('Please wait a moment before searching again.');
+                    return;
+                }
+            }
+            localStorage.setItem('chatjeen_last_match_time', Date.now().toString());
+
             // 1. Insert into waitlist
             const { error: insertError } = await supabase
                 .from('users_temp')
@@ -52,7 +63,8 @@ function MatchingContent() {
 
             if (insertError) {
                 console.error('Waitlist Error Details:', insertError);
-                setError(`Failed to join waitlist. [${insertError.code || 'UNKNOWN'}] ${insertError.message}`);
+                // Fail gracefully so we don't spam errors
+                setError('Matching system busy. Please try again soon.');
                 return;
             }
 

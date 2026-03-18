@@ -1,14 +1,15 @@
-import Peer from 'simple-peer';
 import { rtdb } from './firebaseClient';
 import { ref, push, onChildAdded, onValue, onDisconnect, remove, off, set } from 'firebase/database';
 
 export class WebRTCManager {
-  peer: Peer.Instance | null = null;
+  pc: RTCPeerConnection | null = null;
   roomId: string;
   userId: string;
   stream: MediaStream | null = null;
   presenceUnsubscribe: (() => void) | null = null;
   signalsUnsubscribe: (() => void) | null = null;
+  signalQueue: any[] = [];
+  signalTimeout: any = null;
   
   constructor(roomId: string, userId: string) {
     this.roomId = roomId;
@@ -16,13 +17,13 @@ export class WebRTCManager {
   }
 
   async init(isInitiator: boolean, onStream: (stream: MediaStream) => void) {
-    console.log(`[WebRTC] Initializing (Initiator: ${isInitiator}) for room: ${this.roomId}`);
+    console.log(`[WebRTC] Initializing native RTCPeerConnection (Initiator: ${isInitiator}) for room: ${this.roomId}`);
     try {
       try {
         this.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        console.log('[WebRTC] Media stream acquired');
+        console.log('[WebRTC] Media stream acquired successfully');
       } catch (mediaErr) {
-        console.error('[WebRTC] Failed to get media stream:', mediaErr);
+        console.error('[WebRTC] Media access denied:', mediaErr);
         throw new Error('Microphone access denied or unavailable. Please allow microphone access.');
       }
 
@@ -31,110 +32,158 @@ export class WebRTCManager {
       const myPresenceRef = ref(rtdb, `${roomRefStr}/presence/${this.userId}`);
       const presenceRef = ref(rtdb, `${roomRefStr}/presence`);
 
-      // Setup disconnect hook to remove presence when client drops unexpectedly
       onDisconnect(myPresenceRef).remove().catch(e => console.error('onDisconnect error', e));
-      // Set presence to true
       await set(myPresenceRef, true);
 
       let peerStarted = false;
 
-      const startPeer = () => {
+      const flushQueue = async () => {
+          if (this.signalQueue.length === 0) return;
+          const toSend = [...this.signalQueue];
+          this.signalQueue = [];
+          
+          console.log(`[WebRTC] Broadcasting batch of ${toSend.length} signals`);
+          await push(signalsRef, {
+              from: this.userId,
+              signals: toSend
+          });
+      }
+
+      const queueSignal = (sig: any) => {
+          this.signalQueue.push(sig);
+          if (!this.signalTimeout) {
+              this.signalTimeout = setTimeout(() => {
+                  this.signalTimeout = null;
+                  flushQueue();
+              }, 150);
+          }
+      };
+
+      const startPeer = async () => {
         if (peerStarted) return;
         peerStarted = true;
         
-        console.log('[WebRTC] Both peers present. Starting Simple-Peer logic...');
-        this.peer = new Peer({
-          initiator: isInitiator,
-          trickle: true,
-          stream: this.stream as MediaStream,
-          config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }] }
+        console.log('[WebRTC] Fetching TURN credentials...');
+        let iceServers: RTCIceServer[] = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:global.stun.twilio.com:3478' }
+        ];
+        
+        try {
+            const response = await fetch("https://chatjeen.metered.live/api/v1/turn/credentials?apiKey=3d6521bf1c978d7d05097c2693d33ef8c6ae");
+            const meteredServers = await response.json();
+            if (Array.isArray(meteredServers)) {
+                iceServers = [...meteredServers, ...iceServers];
+            }
+        } catch (e) {
+            console.error('[WebRTC] Failed to fetch TURN credentials, falling back to STUN only', e);
+        }
+
+        console.log('[WebRTC] Creating RTCPeerConnection with', iceServers.length, 'servers');
+        
+        this.pc = new RTCPeerConnection({
+          iceServers: iceServers
         });
 
-        // Batch signals to avoid excessive DB writes, though Firebase is very tolerant
-        let signalQueue: any[] = [];
-        let signalTimeout: any = null;
+        // Add local tracks
+        this.stream!.getTracks().forEach(track => {
+            this.pc!.addTrack(track, this.stream!);
+        });
 
-        const flushSignals = async () => {
-          if (signalQueue.length === 0) return;
-          const toSend = [...signalQueue];
-          signalQueue = [];
-          
-          console.log(`[WebRTC] Broadcasting batch of ${toSend.length} signals via Firebase`);
-          await push(signalsRef, {
-            from: this.userId,
-            signals: toSend
-          });
+        // Handle incoming remote stream
+        this.pc.ontrack = (event) => {
+            console.log('[WebRTC] Received remote track');
+            if (event.streams && event.streams[0]) {
+                onStream(event.streams[0]);
+            } else {
+                const inboundStream = new MediaStream([event.track]);
+                onStream(inboundStream);
+            }
         };
 
-        this.peer.on('signal', (data) => {
-          console.log('[WebRTC] Signal generated (' + (data.type || 'candidate') + '), queuing...');
-          signalQueue.push(data);
-          if (!signalTimeout) {
-             signalTimeout = setTimeout(() => {
-                 signalTimeout = null;
-                 flushSignals();
-             }, 100); // 100ms batch window is plenty fast and highly optimized
+        // Handle outgoing ICE candidates
+        this.pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                console.log('[WebRTC] Generated ICE candidate, queueing...');
+                queueSignal({ type: 'candidate', candidate: event.candidate });
+            }
+        };
+
+        this.pc.oniceconnectionstatechange = () => {
+            console.log('[WebRTC] ICE state change:', this.pc?.iceConnectionState);
+        };
+        
+        this.pc.onconnectionstatechange = () => {
+            console.log('[WebRTC] Peer state change:', this.pc?.connectionState);
+        };
+
+        if (isInitiator) {
+            console.log('[WebRTC] Creating local SDP Offer');
+            const offer = await this.pc.createOffer();
+            await this.pc.setLocalDescription(offer);
+            queueSignal({ type: offer.type, sdp: offer.sdp });
+        }
+      };
+
+      // Handle receiving signaling data from partner
+      const processIncomingSignal = async (sig: any) => {
+          if (!peerStarted && !isInitiator) {
+              console.log('[WebRTC] Starting peer natively upon receiving signal failsafe');
+              await startPeer();
           }
-        });
+          if (!this.pc) return;
 
-        this.peer.on('stream', (remoteStream) => {
-          console.log('[WebRTC] Remote stream received!');
-          onStream(remoteStream);
-        });
-
-        this.peer.on('error', (err) => {
-          console.error('[WebRTC] Peer Error:', err);
-        });
-
-        this.peer.on('connect', () => {
-          console.log('[WebRTC] P2P Connection Established');
-        });
+          try {
+              if (sig.type === 'offer') {
+                  console.log('[WebRTC] Handling remote SDP Offer');
+                  await this.pc.setRemoteDescription(new RTCSessionDescription(sig));
+                  const answer = await this.pc.createAnswer();
+                  await this.pc.setLocalDescription(answer);
+                  console.log('[WebRTC] Sending SDP Answer');
+                  queueSignal({ type: answer.type, sdp: answer.sdp });
+              } else if (sig.type === 'answer') {
+                  console.log('[WebRTC] Handling remote SDP Answer');
+                  await this.pc.setRemoteDescription(new RTCSessionDescription(sig));
+              } else if (sig.type === 'candidate' && sig.candidate) {
+                  console.log('[WebRTC] Handling remote ICE Candidate');
+                  await this.pc.addIceCandidate(new RTCIceCandidate(sig.candidate));
+              }
+          } catch (e) {
+              console.error('[WebRTC] Failed to process incoming signal:', e, sig);
+          }
       };
 
       // Listen for batched signals from Firebase
-      const onSignalAdded = onChildAdded(signalsRef, (snapshot) => {
+      const onSignalAdded = onChildAdded(signalsRef, async (snapshot) => {
         const payload = snapshot.val();
-        if (payload && payload.from !== this.userId) {
-          console.log(`[WebRTC] Received batch of ${payload.signals?.length} signals from peer`);
-          
-          // Failsafe: start peer if it hasn't started
-          if (!peerStarted && !isInitiator) {
-              console.log('[WebRTC] Failsafe: starting peer upon receiving signal');
-              startPeer();
-          }
-          
-          if (this.peer && payload.signals) {
-            payload.signals.forEach((sig: any) => {
-                try {
-                    this.peer?.signal(sig);
-                } catch (e) {
-                    console.error('[WebRTC] Failed to process received signal:', e);
-                }
-            });
+        if (payload && payload.from !== this.userId && payload.signals) {
+          console.log(`[WebRTC] Received batch of ${payload.signals.length} signals from peer`);
+          // CRITICAL FIX: Must process signals strictly sequentially, otherwise 
+          // ICE candidates might be added before setRemoteDescription(offer) finishes!
+          for (const sig of payload.signals) {
+              await processIncomingSignal(sig);
           }
         }
       });
-
       this.signalsUnsubscribe = () => off(signalsRef, 'child_added', onSignalAdded);
 
-      // Track presence to guarantee both users are here before initiating connection
+      // Track presence
       const onPresenceUpdate = onValue(presenceRef, (snapshot) => {
           const state = snapshot.val() || {};
           const presentUsers = Object.keys(state);
           console.log('[WebRTC] Presence Sync. Users in room:', presentUsers.length);
           
           if (presentUsers.length >= 2 && !peerStarted) {
-             console.log('[WebRTC] Presence confirms both users are connected to channel.');
+             console.log('[WebRTC] Presence confirms both users ready.');
              startPeer();
           }
       });
-
       this.presenceUnsubscribe = () => off(presenceRef, 'value', onPresenceUpdate);
 
-      // Failsafe: If presence somehow drops out but we are the initiator, just try it after 5s
+      // Timeout Failsafe
       setTimeout(() => {
           if (isInitiator && !peerStarted) {
-              console.log('[WebRTC] Failsafe: Initiator starting peer after timeout...');
+              console.log('[WebRTC] Failsafe: Initiator starting timeout...');
               startPeer();
           }
       }, 5000);
@@ -146,7 +195,11 @@ export class WebRTCManager {
   }
 
   async destroy() {
-    this.peer?.destroy();
+    console.log('[WebRTC] Destroying connection and cleaning up tracks');
+    if (this.pc) {
+        this.pc.close();
+        this.pc = null;
+    }
     this.stream?.getTracks().forEach(track => track.stop());
     
     if (this.presenceUnsubscribe) this.presenceUnsubscribe();

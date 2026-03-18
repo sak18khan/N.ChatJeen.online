@@ -8,7 +8,12 @@ export default function ThemeToggle() {
 
   useEffect(() => {
     // Check local storage or system preference
-    const stored = localStorage.getItem('theme');
+    let stored = null;
+    try {
+      stored = localStorage.getItem('theme');
+    } catch (err) {
+      console.warn('localStorage access denied for theme.');
+    }
     const system = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     if (stored === 'dark' || (!stored && system)) {
@@ -20,12 +25,16 @@ export default function ThemeToggle() {
   const toggle = () => {
     const next = !isDark;
     setIsDark(next);
-    if (next) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+    try {
+      if (next) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch (err) {
+      console.warn('localStorage setItem denied for theme.');
     }
   };
 

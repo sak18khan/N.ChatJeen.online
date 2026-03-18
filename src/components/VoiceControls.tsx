@@ -87,6 +87,8 @@ export default function VoiceControls({
   useEffect(() => {
     if (audioRef.current && remoteStream) {
       audioRef.current.srcObject = remoteStream;
+      // Explicitly call play to handle strict browser autoplay policies (e.g. Safari iOS)
+      audioRef.current.play().catch(e => console.warn('Autoplay prevented by browser:', e));
     }
   }, [remoteStream]);
 
