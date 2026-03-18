@@ -11,6 +11,10 @@ import { findMatch } from '@/lib/matching';
 import { detectIdentity, UserIdentity } from '@/lib/identity';
 import Toast from '@/components/Toast';
 
+// Firebase imports for identity and skips
+import { rtdb, fbConnectionErr } from '@/lib/firebaseClient';
+import { ref, onValue, set, remove, onDisconnect, off } from 'firebase/database';
+
 export default function VoicePage({ params }: { params: Promise<{ roomId: string }> }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -30,9 +34,19 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
   const [myIdentity, setMyIdentity] = useState<UserIdentity | null>(null);
   const [partnerIdentity, setPartnerIdentity] = useState<UserIdentity | null>(null);
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+  
   const webrtcRef = useRef<WebRTCManager | null>(null);
-  const channelRef = useRef<any>(null);
   const rematchChannelRef = useRef<any>(null);
+
+  // Monitor Firebase Connection Errors
+  useEffect(() => {
+    const errorInterval = setInterval(() => {
+        if (fbConnectionErr && !toast?.message.includes(fbConnectionErr)) {
+            setToast({ message: fbConnectionErr, type: 'error' });
+        }
+    }, 1000);
+    return () => clearInterval(errorInterval);
+  }, [toast]);
 
   // 1. Identity Detection - Only run once
   useEffect(() => {
@@ -55,24 +69,37 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
       return;
     }
 
+    let isMounted = true;
+
     // Init WebRTC & Room info
     async function initVoice() {
       console.log('Voice session initializing for room:', roomId);
       try {
-          const { data: roomData, error: roomError } = await supabase
-            .from('rooms')
-            .select('user1, user2')
-            .eq('id', roomId)
-            .maybeSingle();
+          let roomData = null;
+          let retries = 5;
+          while (retries > 0 && isMounted) {
+              const { data } = await supabase
+                  .from('rooms')
+                  .select('user1, user2')
+                  .eq('id', roomId)
+                  .maybeSingle();
+              if (data) {
+                  roomData = data;
+                  break;
+              }
+              console.warn('[VoicePage] Room data not found, retrying...');
+              await new Promise(r => setTimeout(r, 600));
+              retries--;
+          }
+
+          if (!isMounted) return;
           
           let isInitiator = false;
           if (roomData) {
               isInitiator = roomData.user1 === myId;
           } else {
-              // Fallback for test rooms or missing data: use roomId as a seed
-              // Simple deterministic choice: if roomId starts with a-f, user1 is initiator
+              console.error('[VoicePage] CRITICAL: Room data missing after retries! Connection will likely fail.');
               isInitiator = /^[0-7]/.test(roomId);
-              console.warn('Room data missing, using fallback initiator logic:', isInitiator);
           }
           
           console.log('Is Initiator:', isInitiator);
@@ -81,67 +108,75 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
           webrtcRef.current = manager;
           manager.init(isInitiator, (stream) => {
               console.log('Remote stream received');
-              setRemoteStream(stream);
-              setStatus('connected');
+              if (isMounted) {
+                  setRemoteStream(stream);
+                  setStatus('connected');
+              }
           });
-      } catch (err) {
+      } catch (err: any) {
           console.error('Voice Init Error:', err);
-          setToast({ message: "Failed to initialize voice. Try skipping.", type: "error" });
+          if (!isMounted) return;
+          if (err.message && err.message.includes('Microphone')) {
+              setToast({ message: "Microphone access is required to use Voice Chat.", type: "error" });
+          } else {
+              setToast({ message: "Failed to initialize voice. Try skipping.", type: "error" });
+          }
       }
     }
     initVoice();
 
-    // Setup Identity Sync Channel
-    const channel = supabase.channel(`voice_room:${roomId}`);
-    channelRef.current = channel;
+    // Setup Identity Sync and Skip Channel via Firebase RTDB
+    const identitiesRef = ref(rtdb, `rooms/${roomId}/identities`);
+    const skippedRef = ref(rtdb, `rooms/${roomId}/skipped`);
 
-    channel
-      .on('broadcast', { event: 'identity_sync' }, (payload) => {
-        if (payload.payload.userId !== myId) {
-            console.log('Received partner identity:', payload.payload.identity);
-            setPartnerIdentity(payload.payload.identity);
+    const onIdentityAdded = onValue(identitiesRef, (snapshot) => {
+        const identities = snapshot.val() || {};
+        for (const [uid, identity] of Object.entries(identities)) {
+            if (uid !== myId && isMounted) {
+                console.log('Received partner identity:', identity);
+                setPartnerIdentity(identity as UserIdentity);
+            }
         }
-      })
-      .on('broadcast', { event: 'partner_skipped' }, (payload) => {
-        if (payload.payload.senderId !== myId) {
+    });
+
+    const onPartnerSkipped = onValue(skippedRef, (snapshot) => {
+        const skips = snapshot.val() || {};
+        const partnerSkipped = Object.keys(skips).find(uid => uid !== myId);
+        if (partnerSkipped && isMounted) {
             console.log('Partner skipped');
             setStatus('disconnected');
             setPartnerIdentity(null);
         }
-      })
-      .subscribe((subStatus) => {
-          if (subStatus === 'SUBSCRIBED' && myIdentity) {
-              channel.send({
-                  type: 'broadcast',
-                  event: 'identity_sync',
-                  payload: { userId: myId, identity: myIdentity }
-              });
-          }
-      });
+    });
 
     return () => {
+        isMounted = false;
         console.log('Cleaning up voice session for room:', roomId);
         webrtcRef.current?.destroy();
-        supabase.removeChannel(channel);
+        
+        // Cleanup Firebase Listeners
+        off(identitiesRef, 'value', onIdentityAdded);
+        off(skippedRef, 'value', onPartnerSkipped);
+        
+        const myIdentityRef = ref(rtdb, `rooms/${roomId}/identities/${myId}`);
+        remove(myIdentityRef).catch(e => console.error(e));
+        
         if (rematchChannelRef.current) {
             supabase.removeChannel(rematchChannelRef.current);
         }
     };
-  }, [roomId, myId, router, myIdentity]); // Added myIdentity to sync when it arrives
+  }, [roomId, myId, router]);
 
-  // 3. Heartbeat identity sync to ensure delivery
+  // 3. Status sync and Identity broadcasting
   useEffect(() => {
-    if (myIdentity && status === 'connected' && channelRef.current) {
-        const interval = setInterval(() => {
-            channelRef.current.send({
-                type: 'broadcast',
-                event: 'identity_sync',
-                payload: { userId: myId, identity: myIdentity }
-            });
-        }, 5000);
-        return () => clearInterval(interval);
+    // Broadcast identity as soon as we have it so the UI shows 'Connecting to [Name]...'
+    if (myIdentity && myId && roomId) {
+        const myIdentityRef = ref(rtdb, `rooms/${roomId}/identities/${myId}`);
+        // ensure it clears on disconnect
+        onDisconnect(myIdentityRef).remove().catch(e => console.error(e));
+        set(myIdentityRef, myIdentity);
     }
-  }, [myIdentity, status, myId]);
+  }, [myIdentity, myId, roomId]);
 
   const handleSkip = async () => {
     console.log('Skipping current user...');
@@ -156,66 +191,20 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
         rematchChannelRef.current = null;
     }
 
-    // 2. Broadcast skip to partner
-    if (channelRef.current) {
-        try {
-            channelRef.current.send({
-              type: 'broadcast',
-              event: 'partner_skipped',
-              payload: { senderId: myId }
-            });
-        } catch (e) {
-            console.warn('Failed to broadcast skip:', e);
-        }
+    // 2. Broadcast skip to partner via Firebase
+    try {
+        const mySkipRef = ref(rtdb, `rooms/${roomId}/skipped/${myId}`);
+        await set(mySkipRef, true);
+    } catch (e) {
+        console.warn('Failed to broadcast skip:', e);
     }
 
     // 3. Reset webrtc
     webrtcRef.current?.destroy();
     webrtcRef.current = null;
 
-    // 4. Find new match
-    try {
-        const newRoom = await findMatch(myId!, 'voice');
-        if (newRoom) {
-          console.log('New match found immediately:', newRoom.id);
-          router.replace(`/voice/${newRoom.id}?me=${myId}`);
-        } else {
-            console.log('No immediate match. Waiting for database update...');
-            // Wait for match via realtime update
-            const waitChannel = supabase.channel(`user:${myId}_voice_rematch`);
-            
-            waitChannel.on('postgres_changes', {
-              event: 'UPDATE',
-              schema: 'public',
-              table: 'users_temp',
-              filter: `id=eq.${myId}`
-            }, async (payload) => {
-              console.log('User update received:', payload.new.status);
-              if (payload.new.status === 'matched') {
-                const { data: roomData } = await supabase
-                  .from('rooms')
-                  .select('id')
-                  .or(`user1.eq.${myId},user2.eq.${myId}`)
-                  .order('created_at', { ascending: false })
-                  .limit(1)
-                  .single();
-                
-                if (roomData) {
-                  console.log('Match found via realtime:', roomData.id);
-                  router.replace(`/voice/${roomData.id}?me=${myId}`);
-                  supabase.removeChannel(waitChannel);
-                  rematchChannelRef.current = null;
-                }
-              }
-            });
-
-            waitChannel.subscribe();
-            rematchChannelRef.current = waitChannel;
-        }
-    } catch (err) {
-        console.error('Skip/Match Error:', err);
-        setToast({ message: "Matching error. Please refresh.", type: "error" });
-    }
+    // 4. Redirect to the dedicated matchmaker page to handle queue insertion & heartbeats
+    window.location.href = '/matching?mode=voice';
   };
 
   return (
@@ -265,3 +254,4 @@ function VoiceContent({ params }: { params: Promise<{ roomId: string }> }) {
     </div>
   );
 }
+

@@ -18,30 +18,16 @@
 }
 
 :root {
-  /* LIGHT MODE: White & Green */
-  --background: #FFFFFF;
-  --foreground: #0F172A;
-  --primary: #5CE65C; /* Bright Green */
-  --primary-foreground: #FFFFFF;
-  --accent: #F0FDF4; /* Very light green hint */
-  --muted: #F8FAFC;
-  --muted-foreground: #64748B;
-  --border: #E2E8F0;
-  --card: #FFFFFF;
-  --radius: 0.75rem;
-}
-
-.dark {
-  /* DARK MODE: Black & Yellow */
   --background: #000000;
   --foreground: #F8FAFC;
   --primary: #FACC15; /* Yellow */
   --primary-foreground: #000000;
-  --accent: #1E1E1E;
-  --muted: #111111;
+  --accent: #111111;
+  --muted: #0A0A0A;
   --muted-foreground: #94A3B8;
-  --border: #262626;
-  --card: #0A0A0A;
+  --border: #1A1A1A;
+  --card: #050505;
+  --radius: 0.75rem;
 }
 
 @layer base {

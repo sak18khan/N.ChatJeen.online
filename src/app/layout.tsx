@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
-  title: "ChatJeen | Anonymous, Secure & Free Chat",
-  description: "ChatJeen is the world's most secure and anonymous chat experiment. Connect for text chat and encrypted voice calls with zero sign-up required. Secure, private, and forever free.",
+  title: "ChatJeen | Meet New People Safely & Anonymously",
+  description: "ChatJeen is a secure, anonymous, and free platform to meet new people. Connect instantly for text chat and high-quality voice calls. Safe, private, and forever free.",
   manifest: "/manifest.json",
   icons: {
     icon: "/favicon.svg",
@@ -12,21 +11,21 @@ export const metadata: Metadata = {
     apple: "/favicon.svg",
   },
   openGraph: {
-    title: "ChatJeen | Anonymous & Secure Chat",
-    description: "Secure, high-contrast, and private anonymous chat and voice experiment.",
+    title: "ChatJeen | Meet New People Safely",
+    description: "Connect instantly and securely with people around the world. Free anonymous text and voice chats.",
     url: "https://www.chatjeen.online",
     siteName: "ChatJeen",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ChatJeen | Anonymous & Secure Chat",
-    description: "Connect anonymously with people around the world for text and voice. Secure, private, and free.",
+    title: "ChatJeen | Meet New People Safely",
+    description: "Connect instantly and securely with people around the world. Free anonymous text and voice chats.",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#5CE65C",
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
 };
@@ -41,7 +40,7 @@ export default function RootLayout({
     "@type": "WebApplication",
     "name": "ChatJeen",
     "url": "https://www.chatjeen.online",
-    "description": "Secure anonymous chat platform for text chat and voice calls. Forever free and private.",
+    "description": "Secure anonymous platform for connecting with new people safely via text chat and voice calls. Free and private.",
     "applicationCategory": "SocialNetworkingApplication",
     "operatingSystem": "All",
     "offers": {
@@ -52,7 +51,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <script
           type="application/ld+json"
@@ -60,7 +59,6 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased selection:bg-primary/20">
-        <ThemeToggle />
         {children}
       </body>
     </html>

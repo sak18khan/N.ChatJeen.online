@@ -14,9 +14,11 @@ export interface UserIdentity {
     name: string;
     countryCode: string; // ISO 3166-1 alpha-2 (e.g. US)
     countryInitial: string; // ISO 3166-1 alpha-3 (e.g. USA)
+    country: string;
     flag: string;
     karma?: number;
     title?: string;
+    ageRange?: string;
 }
 
 export function generateRandomName(): string {
@@ -73,9 +75,11 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
         name: generateRandomName(),
         countryCode: 'UN',
         countryInitial: 'GLO',
+        country: 'Global Match',
         flag: '🌐',
         karma: karma,
-        title: getTitleByKarma(karma)
+        title: getTitleByKarma(karma),
+        ageRange: '18-24'
     };
 
     try {
@@ -88,6 +92,7 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
             ...defaultIdentity,
             countryCode: data.country_code || 'UN',
             countryInitial: data.country_code_iso3 || getCountryInitials(data.country_code || 'UN'),
+            country: data.country_name || 'Global Match',
             flag: data.country_code ? getFlagEmoji(data.country_code) : '🌐',
         };
     } catch (error) {
@@ -99,6 +104,7 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
                 ...defaultIdentity,
                 countryCode: fData.country_code || 'UN',
                 countryInitial: fData.country_code_iso3 || getCountryInitials(fData.country_code || 'UN'),
+                country: fData.country || 'Global Match',
                 flag: fData.country_code ? getFlagEmoji(fData.country_code) : '🌐',
             };
         } catch (fError) {

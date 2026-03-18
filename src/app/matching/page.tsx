@@ -6,14 +6,14 @@ import { motion } from 'framer-motion';
 import { Zap, ShieldCheck, Laptop, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/lib/supabaseClient';
-import { findMatch, ChatMode } from '@/lib/matching';
+import { findMatch, ChatMode, updatePing } from '@/lib/matching';
 import { Button } from '@/components/ui/button';
 
 function MatchingContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const mode = (searchParams.get('mode') as ChatMode) || 'text';
-    const vibe = 'Any';
+    const vibe = mode; // We use vibe to store the mode so they don't mix up
     const layout = 'text-only';
     const selection = 'none';
     
@@ -39,33 +39,35 @@ function MatchingContent() {
         const myId = uuidv4();
         setUserId(myId);
         
+        let pingInterval: NodeJS.Timeout;
+        let matchChannel: any;
+
         const startMatching = async () => {
             setStatus('searching');
             
             // 1. Insert into waitlist
             const { error: insertError } = await supabase
                 .from('users_temp')
-                .insert({ id: myId, status: 'waiting' });
+                .insert({ id: myId, status: 'waiting', vibe: mode });
 
             if (insertError) {
-                console.error('Waitlist Error Details:', {
-                    message: insertError.message,
-                    details: insertError.details,
-                    hint: insertError.hint,
-                    code: insertError.code
-                });
+                console.error('Waitlist Error Details:', insertError);
                 setError(`Failed to join waitlist. [${insertError.code || 'UNKNOWN'}] ${insertError.message}`);
                 return;
             }
+
+            // Start heartbeat ping
+            pingInterval = setInterval(() => updatePing(myId), 10000);
 
             // 2. Try immediate match
             const room = await findMatch(myId, mode);
             
             if (room) {
+                clearInterval(pingInterval);
                 router.push(`/${mode}/${room.id}?me=${myId}`);
             } else {
                 // 3. Subscribe for match
-                const channel = supabase
+                matchChannel = supabase
                     .channel(`match:${myId}`)
                     .on('postgres_changes', {
                         event: 'UPDATE',
@@ -74,27 +76,39 @@ function MatchingContent() {
                         filter: `id=eq.${myId}`
                     }, async (payload) => {
                         if (payload.new.status === 'matched') {
-                            const { data: roomData } = await supabase
-                                .from('rooms')
-                                .select('*')
-                                .or(`user1.eq.${myId},user2.eq.${myId}`)
-                                .order('created_at', { ascending: false })
-                                .limit(1)
-                                .single();
-                            
-                            if (roomData) {
-                                router.push(`/${mode}/${roomData.id}?me=${myId}`);
+                            let retries = 6;
+                            while (retries > 0) {
+                                const { data: roomData } = await supabase
+                                    .from('rooms')
+                                    .select('*')
+                                    .or(`user1.eq.${myId},user2.eq.${myId}`)
+                                    .order('created_at', { ascending: false })
+                                    .limit(1)
+                                    .single();
+                                
+                                if (roomData) {
+                                    clearInterval(pingInterval);
+                                    router.push(`/${mode}/${roomData.id}?me=${myId}`);
+                                    return;
+                                }
+                                await new Promise(r => setTimeout(r, 500));
+                                retries--;
                             }
+                            setError('Match established but room failed to instantiate. Please try again.');
                         }
                     })
                     .subscribe();
-
-                return () => { supabase.removeChannel(channel); };
             }
         };
 
         startMatching();
-    }, [mode, layout, selection]);
+
+        // Proper React Cleanup
+        return () => {
+            if (pingInterval) clearInterval(pingInterval);
+            if (matchChannel) supabase.removeChannel(matchChannel);
+        };
+    }, [mode, layout, selection, router]);
 
     if (error) {
         return (

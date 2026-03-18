@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Smile, Info, X, Zap, Loader2, Flag, Sparkles, Clock, Globe, ShieldCheck, RefreshCw, Trophy } from 'lucide-react';
+import { Send, Smile, Info, X, Zap, Loader2, Flag, Sparkles, Clock, Globe, ShieldCheck, RefreshCw, Trophy, Menu, UserCircle, Image } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import MessageBubble from './MessageBubble';
 import { Button } from './ui/button';
@@ -12,6 +12,7 @@ import Toast from './Toast';
 import { findMatch } from '@/lib/matching';
 import { detectIdentity, UserIdentity } from '@/lib/identity';
 import ChatKarmaOverlay from './ChatKarmaOverlay';
+import Link from 'next/link';
 
 interface Message {
   id: string;
@@ -52,8 +53,70 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- IMAGE UPLOAD LOGIC ---
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        setToast({ message: 'Only image files are allowed.', type: 'error' });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const base64Str = event.target?.result as string;
+        
+        // Resize image to prevent massive base64 payloads
+        const img = new globalThis.Image();
+        img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round((width * MAX_HEIGHT) / height);
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            // Send via database
+            const { error } = await supabase
+              .from('messages')
+              .insert({
+                room_id: roomId,
+                sender_id: myId,
+                content: `[IMAGE]${resizedBase64}`
+              });
+
+            if (error) console.error('Error sending image:', error);
+            
+            // Reset input
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        };
+        img.src = base64Str;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // --- TIMER LOGIC ---
   useEffect(() => {
@@ -111,57 +174,16 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
         return; // Wait for user to rate or close
     }
 
+    // Inform partner
     supabase.channel(`chat_room:${roomId}`).send({
       type: 'broadcast',
       event: 'partner_skipped',
       payload: { senderId: myId }
     });
-
-    setStatus('connecting');
-    setMessages([]);
-    setSecondsConnected(0);
-    setShowKarma(false);
-    setPartnerIdentity(null);
-    setPartnerId(null);
-    await supabase
-      .from('users_temp')
-      .update({ status: 'waiting' })
-      .eq('id', myId);
-
-    // 2. Find new match
-    const newRoom = await findMatch(myId, mode);
-    if (newRoom) {
-      setRoomId(newRoom.id);
-      setStatus('connected');
-      window.history.replaceState(null, '', `/${mode}/${newRoom.id}?me=${myId}`);
-    } else {
-        const channel = supabase
-        .channel(`user:${myId}_rematch`)
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'users_temp',
-          filter: `id=eq.${myId}`
-        }, async (payload) => {
-          if (payload.new.status === 'matched') {
-            const { data: roomData } = await supabase
-              .from('rooms')
-              .select('id')
-              .or(`user1.eq.${myId},user2.eq.${myId}`)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single();
-            
-            if (roomData) {
-              setRoomId(roomData.id);
-              setStatus('connected');
-              window.history.replaceState(null, '', `/${mode}/${roomData.id}?me=${myId}`);
-              supabase.removeChannel(channel);
-            }
-          }
-        })
-        .subscribe();
-    }
+    
+    // Redirect back to the dedicated matchmaker page, which handles inserting into 
+    // the queue, heartbeat pings, and loading states automatically!
+    window.location.href = `/matching?mode=${mode}`;
   };
 
   // --- EMOJI PICKER LOGIC ---
@@ -198,7 +220,22 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
 
     fetchRoomAndMessages();
 
-    const channel = supabase.channel(`chat_room:${roomId}`);
+    // 15 SECOND FALLBACK TIMEOUT FOR GHOST CONNECTIONS
+    let ghostTimeout: NodeJS.Timeout | null = null;
+    if (status === 'connected' && !partnerIdentity) {
+        ghostTimeout = setTimeout(() => {
+            console.log('Ghost connection timeout reached. Partner never fully joined. Skipping...');
+            setToast({ message: "Partner failed to connect. Finding someone else...", type: 'info' });
+            handleSkip(); // Find a new match automatically
+        }, 15000);
+    }
+
+    const channel = supabase.channel(`chat_room:${roomId}`, {
+        config: {
+            presence: { key: myId }
+        }
+    });
+
     channelRef.current = channel;
 
     channel
@@ -217,6 +254,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
       })
       .on('broadcast', { event: 'partner_skipped' }, (payload) => {
           if (payload.payload.senderId !== myId) {
+              if (ghostTimeout) clearTimeout(ghostTimeout);
               setStatus('disconnected');
               setPartnerIdentity(null);
               if (secondsConnected > 15 || messages.length > 5) {
@@ -227,6 +265,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
       .on('broadcast', { event: 'identity_sync' }, (payload) => {
         if (payload.payload.userId !== myId) {
             console.log('Received partner identity:', payload.payload.identity);
+            if (ghostTimeout) clearTimeout(ghostTimeout); // Clear ghost timeout when identity is received
             setPartnerIdentity(payload.payload.identity);
         }
       })
@@ -239,8 +278,21 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
             });
         }
       })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        // If the other person leaves presence (e.g. closes tab, drops connection)
+        if (key !== myId) {
+            console.log('Partner left presence via channel drop', key);
+            if (ghostTimeout) clearTimeout(ghostTimeout);
+            setStatus('disconnected');
+            // Assuming this implies they skipped or refreshed
+            if (secondsConnected > 15 || messages.length > 5) {
+                setShowKarma(true);
+            }
+        }
+      })
+      .subscribe(async (subStatus) => {
+        if (subStatus === 'SUBSCRIBED') {
+            await channel.track({ online: true });
             // Signal presence and request identity from partner
             channel.send({
                 type: 'broadcast',
@@ -259,6 +311,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
       });
 
     return () => {
+        if (ghostTimeout) clearTimeout(ghostTimeout);
         supabase.removeChannel(channel);
         channelRef.current = null;
     };
@@ -328,28 +381,17 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   };
 
   return (
-    <div className="flex flex-col w-full relative transition-all duration-300 h-[92vh] sm:h-[90vh] max-w-4xl mx-auto my-0 sm:my-8">
+    <div className="flex flex-col w-full relative transition-all duration-300 h-screen h-[100dvh] max-w-4xl mx-auto my-0 bg-black overflow-hidden">
       
-      {/* BRANDING TOP: MINIMAL & ELEGANT */}
-      {variant === 'full' && (
-        <div className="flex items-center justify-between px-6 mb-6 h-12 shrink-0">
-            <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => window.location.href = '/'}>
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 group-hover:bg-primary/20 transition-all">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                </div>
-                <h1 className="text-xl font-black text-foreground tracking-tighter uppercase italic">Chat<span className="text-primary not-italic">Jeen</span></h1>
-            </div>
-            
-            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
-                <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span>Protocol Active</span>
-                </div>
-            </div>
-        </div>
-      )}
+      {/* NEW HEADER: STICKY & MINIMAL */}
+      <header className="sticky top-0 z-50 bg-[#000000] border-b border-white/10 px-4 h-14 flex items-center justify-center shrink-0">
+          <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
+              <h1 className="text-base font-black italic tracking-tighter uppercase text-white">Chat<span className="text-yellow-400 not-italic">Jeen</span></h1>
+              <span className="text-[10px] text-white/40 font-medium">www.chatjeen.online</span>
+          </Link>
+      </header>
 
-      <div className="flex-1 flex flex-col bg-card/60 backdrop-blur-2xl border border-white/10 rounded-none sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden relative">
+      <div className="flex-1 flex flex-col bg-black border-none overflow-hidden relative">
         <AnimatePresence>
             {showCelebration && (
                 <motion.div 
@@ -366,131 +408,100 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
             )}
         </AnimatePresence>
 
-        {/* Connection Header and Info Bar only in full mode */}
-        {variant === 'full' && (
-          <>
-            {/* Connection Header: Premium & Informative */}
-            <div className="px-4 sm:px-8 py-4 sm:py-6 flex items-center justify-between border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-                <div className="flex items-center gap-5">
-                <div className="relative group">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-accent/50 flex items-center justify-center text-primary font-black text-2xl border border-white/10 overflow-hidden shadow-inner group-hover:scale-105 transition-transform duration-500">
-                        {status === 'connecting' ? <RefreshCw className="w-7 h-7 animate-spin opacity-50" /> : (partnerIdentity?.flag || 'S')}
-                    </div>
-                    <motion.div 
-                        initial={false}
-                        animate={{ 
-                            backgroundColor: status === 'connected' ? "var(--primary)" : status === 'connecting' ? "#f59e0b" : "#ef4444",
-                            scale: status === 'connected' ? [1, 1.2, 1] : 1
-                        }}
-                        transition={{ repeat: status === 'connected' ? Infinity : 0, duration: 2 }}
-                        className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-[3px] border-card shadow-lg" 
-                    />
-                </div>
-                <div>
-                    <div className="flex items-center gap-2 sm:gap-3 mb-1">
-                        <h2 className="font-extrabold text-lg sm:text-xl text-foreground tracking-tight leading-none">
-                            {status === 'connecting' ? 'Initialising Link...' : (partnerIdentity?.name || 'Anonymous Stranger')}
-                        </h2>
-                        {partnerIdentity?.title && (
-                            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[9px] font-black uppercase tracking-[0.1em] text-primary border border-primary/20">
-                                {partnerIdentity.title}
-                            </span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <div className={cn(
-                            "text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5",
-                            status === 'connected' ? "text-primary" : "text-muted-foreground/60"
-                        )}>
-                            {status === 'connected' ? (
-                                <>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                                    Securely Connected
-                                </>
-                            ) : status === 'connecting' ? 'Establishing Tunnel...' : 'Session Ended'}
-                        </div>
-                        {status === 'connected' && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60 text-[10px] font-bold uppercase tracking-widest pl-4 border-l border-white/10">
-                                <Clock className="w-3 h-3 text-primary/60" />
-                                {formatTime(secondsConnected)}
-                            </div>
-                        )}
-                    </div>
-                </div>
-                </div>
+        {/* MATCH PROFILE CARD: SLEEK & INTEGRATED */}
+        {variant === 'full' && status === 'connected' && (
+          <div className="mx-4 mt-6 mb-2">
+            <div className="bg-[#111111] border border-white/5 rounded-2xl p-4 flex flex-col gap-3 shadow-lg relative overflow-hidden">
+                {/* Subtle background glow */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 blur-3xl rounded-full translate-x-10 -translate-y-10" />
                 
-                <div className="flex items-center gap-2 sm:gap-4">
-                <Button variant="ghost" size="sm" onClick={onReport} className="text-muted-foreground/60 hover:text-destructive hover:bg-destructive/5 h-10 sm:h-12 px-3 sm:px-5 rounded-xl transition-all font-bold uppercase tracking-widest text-[9px] sm:text-[10px]">
-                    <Flag className="w-4 h-4 sm:mr-2" />
-                    <span className="hidden md:inline">Report</span>
-                </Button>
-                <Button 
-                    onClick={handleSkip} 
-                    disabled={status === 'connecting'}
-                    className="bg-primary text-primary-foreground hover:opacity-90 h-10 sm:h-12 px-4 sm:px-8 font-black text-[10px] sm:text-xs uppercase tracking-[0.15em] rounded-xl shadow-[0_10px_20px_-5px_rgba(92,230,92,0.3)] transition-all active:scale-95 disabled:opacity-50"
-                >
-                    {status === 'connecting' ? <RefreshCw className="w-4 h-4 animate-spin sm:mr-2" /> : null}
-                    {status === 'connecting' ? 'Syncing...' : 'Skip / Next'}
-                </Button>
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-white/10 flex items-center justify-center text-white/40 shrink-0">
+                        <UserCircle className="w-8 h-8" />
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl leading-none">{partnerIdentity?.flag || '🌐'}</span>
+                            <h2 className="font-bold text-base text-white truncate">{partnerIdentity?.name || 'Anonymous'}</h2>
+                        </div>
+                        <div className="flex items-center gap-3 w-full">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-full bg-[#5CE65C] shadow-[0_0_8px_rgba(92,230,92,0.5)]" />
+                                <span className="text-xs font-medium text-[#5CE65C]">Connected</span>
+                            </div>
+                            <div className="w-1 h-1 rounded-full bg-white/20" />
+                            <span className="text-xs font-medium text-white/50 truncate">
+                                {partnerIdentity?.country || 'Global Match'}
+                            </span>
+                            <div className="ml-auto flex items-center gap-1.5 text-white/40">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span className="text-xs font-mono">{formatTime(secondsConnected)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            {/* Info Bar: Sleek & Subtle */}
-            <div className="px-4 sm:px-8 py-2 sm:py-3 bg-white/5 border-b border-white/5 flex justify-between items-center">
-                    <div className="flex items-center gap-3 text-[10px] font-black text-primary/40 uppercase tracking-[0.2em]">
-                        <Globe className="w-3.5 h-3.5" />
-                        {partnerIdentity ? (
-                            <motion.span 
-                                initial={{ opacity: 0, x: -5 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center gap-2"
-                            >
-                                <span className="text-foreground/80">{partnerIdentity.flag}</span>
-                                <span className="text-foreground/80">{partnerIdentity.countryInitial} MATCH</span>
-                                <span className="opacity-40">/</span>
-                                <span className="text-primary/60">{mode.toUpperCase()} MODE</span>
-                            </motion.span>
-                        ) : (
-                            <span>GLOBAL MATCH : {mode.toUpperCase()} MODE</span>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Identity Encrypted</span>
-                    </div>
-            </div>
-          </>
+          </div>
         )}
 
-        {/* Message Area */}
         <div 
             ref={scrollRef}
             className={cn(
-                "flex-1 overflow-y-auto space-y-4 bg-background/50 scroll-smooth",
-                variant === 'minimal' ? "p-4" : "px-6 py-8"
+                "flex-1 overflow-y-auto space-y-4 bg-black scroll-smooth scrollbar-none",
+                variant === 'minimal' ? "p-4" : "px-4 py-4"
             )}
         >
             {status === 'connecting' ? (
-                <div className="flex flex-col items-center justify-center h-full gap-4 text-center">
-                    <div className="w-16 h-16 rounded-full border-4 border-accent border-t-primary animate-spin" />
-                    <div className="space-y-1">
-                        <p className="font-bold text-lg">Finding your next conversation...</p>
-                        <p className="text-sm text-muted-foreground">Pairing you with a verified stranger</p>
+                <div className="flex flex-col items-center justify-center h-full gap-6 text-center animate-in fade-in duration-500">
+                    <div className="relative">
+                        <div className="w-20 h-20 rounded-full bg-[#FF4B4B]/10 flex items-center justify-center">
+                            <motion.div 
+                                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.2, 0.5] }}
+                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                                className="absolute inset-0 rounded-full bg-[#FF4B4B]/20"
+                            />
+                            <div className="w-4 h-4 rounded-full bg-[#FF4B4B] shadow-[0_0_15px_rgba(255,75,75,0.6)]" />
+                        </div>
                     </div>
+                    <div className="space-y-2">
+                        <h3 className="text-xl font-bold text-white tracking-tight">Pairing...</h3>
+                        <p className="text-xs text-white/30 font-medium">Pairing time: about 1 minute</p>
+                    </div>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-6 py-2.5 rounded-full border border-white/10 text-xs font-bold text-white/50 hover:bg-white/5 transition-all"
+                    >
+                        Cancel Pairing
+                    </button>
                 </div>
             ) : status === 'disconnected' ? (
-                <div className="flex flex-col items-center justify-center h-full gap-8 text-center animate-in fade-in zoom-in duration-700 p-8">
-                    <div className="p-16 border border-white/5 rounded-[3rem] bg-white/5 backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                        <X className="w-16 h-16 text-destructive/40 mx-auto mb-6 transition-transform group-hover:scale-110 group-hover:rotate-90 duration-500" />
-                        <h3 className="text-3xl font-black uppercase italic tracking-tighter text-foreground mb-3">Link <span className="text-destructive">Terminated</span></h3>
-                        <p className="text-muted-foreground/60 max-w-xs mx-auto text-sm font-medium leading-relaxed">The peer has disconnected from the secure tunnel. Your session has safely expired.</p>
-                        <Button 
+                <div className="flex flex-col items-center justify-start h-full pt-10 px-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {/* DISCONNECTED STATUS BOX */}
+                    <div className="w-full bg-[#111111] border border-white/5 rounded-2xl p-6 flex flex-col gap-4 text-left">
+                         <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-[#FF4B4B]" />
+                            <p className="text-sm font-medium text-white/80">Partner has left the chat.</p>
+                         </div>
+                         
+                         <div className="flex items-center gap-6 mt-2 ml-5">
+                            <button className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Report abuse</button>
+                            <button className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Feedback</button>
+                         </div>
+                    </div>
+
+                    <div className="flex-1" />
+                    
+                    {/* RESTART BUTTON AT THE BOTTOM */}
+                    <div className="w-full pb-10 flex flex-col items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white/20">
+                            <Menu className="w-4 h-4 rotate-90" />
+                        </div>
+                        <button 
                             onClick={handleSkip}
-                            className="mt-10 bg-primary text-primary-foreground font-black uppercase tracking-widest px-12 h-16 rounded-2xl shadow-[0_20px_40px_-10px_rgba(92,230,92,0.4)] transition-all hover:scale-105 active:scale-95"
+                            className="w-full bg-[#FF4B4B] text-white font-black text-lg py-5 rounded-[1.5rem] shadow-[0_15px_30px_rgba(255,75,75,0.2)] active:scale-95 transition-all uppercase tracking-widest"
                         >
-                            Establish New Link
-                        </Button>
+                            Restart
+                        </button>
                     </div>
                 </div>
             ) : (
@@ -507,118 +518,99 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                     
                     {isOtherTyping && (
                         <motion.div 
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex justify-start items-center gap-2 text-muted-foreground ml-2"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex justify-start w-full px-4 mb-2"
                         >
-                            <div className="flex gap-1">
-                                <motion.div animate={{ opacity:[0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                <motion.div animate={{ opacity:[0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
-                                <motion.div animate={{ opacity:[0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 bg-primary rounded-full" />
+                            <div className="bg-[#1A1A1A] px-4 py-2.5 rounded-[1.25rem] rounded-bl-[0.25rem] flex items-center gap-2 text-white/70 shadow-sm border border-white/5">
+                                <div className="flex gap-1.5 h-4 items-center">
+                                    <motion.div animate={{ scale:[1, 1.2, 1], opacity:[0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0 }} className="w-1.5 h-1.5 bg-white/50 rounded-full" />
+                                    <motion.div animate={{ scale:[1, 1.2, 1], opacity:[0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.2 }} className="w-1.5 h-1.5 bg-white/50 rounded-full" />
+                                    <motion.div animate={{ scale:[1, 1.2, 1], opacity:[0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1.2, delay: 0.4 }} className="w-1.5 h-1.5 bg-white/50 rounded-full" />
+                                </div>
+                                <span className="text-xs font-medium pl-1">typing...</span>
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider">Stranger is typing...</span>
                         </motion.div>
                     )}
                 </>
             )}
         </div>
 
-        {/* Input Area: Floating Bar Design */}
+        {/* NEW FOOTER AREA: MATCHING REFERENCE */}
         {status === 'connected' && (
-            <div className="p-4 sm:p-8 border-t border-white/5 bg-gradient-to-b from-transparent to-white/5 pb-8 sm:pb-8">
-                <div className="max-w-4xl mx-auto flex items-center gap-3 sm:gap-4 relative">
-                    <div className="relative pb-1">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
+            <div className="p-4 sm:p-6 bg-[#000000] border-t border-white/5 pb-8">
+                <div className="flex items-center gap-3">
+                    {/* LEAVE BUTTON */}
+                    <button 
+                        onClick={handleSkip}
+                        className="text-[#FF4B4B] font-bold text-sm px-2 py-2 hover:opacity-80 transition-all uppercase tracking-wider"
+                    >
+                        Leave
+                    </button>
+
+                    {/* CENTERED INPUT FIELD */}
+                    <div className="flex-1 relative flex items-center">
+                        <button 
+                            className="absolute left-4 z-10 text-white/20 hover:text-white/40 transition-colors"
                             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            className={cn(
-                                "text-muted-foreground/60 rounded-2xl h-12 w-12 sm:h-14 sm:w-14 hover:bg-white/10 flex-shrink-0 transition-all duration-300", 
-                                showEmojiPicker && "text-primary bg-primary/10 border border-primary/20 rotate-12"
-                            )}
                         >
-                            <Smile className="w-6 h-6 sm:w-7 sm:h-7" />
-                        </Button>
-                        <AnimatePresence>
-                            {showEmojiPicker && (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 10, scale: 0.9, x: -20 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
-                                    exit={{ opacity: 0, y: 10, scale: 0.9, x: -20 }}
-                                    className="absolute bottom-20 left-0 z-50 p-4 bg-card/95 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] grid grid-cols-6 gap-3 w-72"
-                                >
-                                    {COMMON_EMOJIS.map(emoji => (
-                                        <motion.button 
-                                            key={emoji} 
-                                            whileHover={{ scale: 1.2, rotate: 5 }}
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => addEmoji(emoji)} 
-                                            className="text-2xl hover:bg-white/10 rounded-xl p-2 transition-colors"
-                                        >
-                                            {emoji}
-                                        </motion.button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                    
-                    <div className="flex-1 relative group">
-                        <textarea
+                            <Smile className="w-5 h-5" />
+                        </button>
+                        
+                        <input
                             ref={inputRef as any}
-                            rows={1}
+                            type="text"
                             value={inputText}
-                            onChange={(e) => {
-                                handleInputChange(e as any);
-                                // Auto-resize height
-                                e.target.style.height = 'auto';
-                                e.target.style.height = e.target.scrollHeight + 'px';
-                            }}
+                            onChange={(e) => handleInputChange(e as any)}
                             onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
+                                if (e.key === 'Enter') {
                                     handleSend();
-                                    (e.target as any).style.height = 'auto';
                                 }
                             }}
                             placeholder="Type a message..."
-                            className="w-full bg-white/5 border border-white/10 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 rounded-2xl px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base font-medium transition-all outline-none text-foreground placeholder:text-muted-foreground/20 disabled:opacity-50 resize-none min-h-[48px] sm:min-h-[56px] max-h-32 scrollbar-none"
+                            className="w-full bg-[#1A1A1A] border-none rounded-full pl-12 pr-12 py-3.5 text-sm text-white placeholder:text-white/20 focus:ring-0 outline-none"
                         />
-                        <div className="absolute inset-0 rounded-2xl pointer-events-none border border-primary/0 group-focus-within:border-primary/20 transition-all duration-500" />
+
+                        {showEmojiPicker && (
+                            <div className="absolute bottom-full left-0 mb-4 bg-[#1A1A1A] border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-wrap gap-2 w-[280px] z-50">
+                                {COMMON_EMOJIS.map(emoji => (
+                                    <button 
+                                        key={emoji} 
+                                        onClick={() => addEmoji(emoji)}
+                                        className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg text-xl transition-colors"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={fileInputRef} 
+                            onChange={handleImageUpload} 
+                            className="hidden" 
+                        />
+                        <button 
+                            className="absolute right-4 z-10 text-white/20 hover:text-white/40 transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Image className="w-5 h-5" />
+                        </button>
                     </div>
 
-                    <div className="flex items-center gap-3 pb-1">
-                        {variant === 'full' && (
-                            <Button 
-                                onClick={async () => {
-                                    setIsGeneratingIcebreaker(true);
-                                    await generateIcebreaker(roomId);
-                                    setIsGeneratingIcebreaker(false);
-                                }}
-                                disabled={isGeneratingIcebreaker}
-                                variant="outline"
-                                className="hidden sm:flex items-center gap-2.5 rounded-2xl px-6 h-14 border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-primary/30 transition-all group"
-                            >
-                                {isGeneratingIcebreaker ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> : <Zap className="w-4 h-4 text-primary group-hover:fill-primary/20" />}
-                                <span>Icebreaker</span>
-                            </Button>
+                    {/* SEND BUTTON */}
+                    <button
+                        onClick={handleSend}
+                        disabled={!inputText.trim()}
+                        className={cn(
+                            "w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-30",
+                            inputText.trim() ? "bg-[#FACC15] text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]" : "bg-[#1A1A1A] text-white/40"
                         )}
-                        <motion.div
-                            animate={inputText.trim() ? { scale: [1, 1.05, 1] } : {}}
-                            transition={{ repeat: Infinity, duration: 2 }}
-                        >
-                            <Button
-                                onClick={handleSend}
-                                disabled={!inputText.trim()}
-                                className={cn(
-                                    "bg-primary text-primary-foreground hover:opacity-95 rounded-2xl shadow-[0_10px_20px_-5px_rgba(92,230,92,0.3)] transition-all active:scale-90 flex items-center justify-center shrink-0 disabled:opacity-30 disabled:shadow-none",
-                                    variant === 'minimal' ? "w-12 h-12" : "w-14 h-14"
-                                )}
-                            >
-                                <Send className={cn("rotate-45 -translate-y-0.5 -translate-x-0.5 transition-transform", inputText.trim() && "scale-110", variant === 'minimal' ? "w-5 h-5" : "w-6 h-6")} />
-                            </Button>
-                        </motion.div>
-                    </div>
+                    >
+                        <Send className="w-5 h-5 translate-x-0.5 -translate-y-0.5 rotate-45" />
+                    </button>
                 </div>
             </div>
         )}

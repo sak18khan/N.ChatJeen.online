@@ -3,8 +3,7 @@ import { supabase } from './supabaseClient';
 export type UserStatus = 'waiting' | 'matched';
 export type ChatMode = 'text' | 'voice';
 
-export async function findMatch(userId: string, mode: ChatMode) {
-  // 1. Update our own ping
+export async function updatePing(userId: string) {
   try {
     await supabase
       .from('users_temp')
@@ -13,14 +12,20 @@ export async function findMatch(userId: string, mode: ChatMode) {
   } catch (err) {
     console.warn('Ping update failed:', err);
   }
+}
 
-  // 2. Get another waiting user with activity in last 15s
+export async function findMatch(userId: string, mode: ChatMode) {
+  // 1. Update our own ping
+  await updatePing(userId);
+
+  // 2. Get another waiting user with activity in last 30s
   let query = supabase
     .from('users_temp')
     .select('id')
     .eq('status', 'waiting')
+    .eq('vibe', mode) // Separate text vs voice queues
     .neq('id', userId)
-    .gt('last_ping', new Date(Date.now() - 15000).toISOString())
+    .gt('last_ping', new Date(Date.now() - 30000).toISOString())
     .order('created_at', { ascending: true });
 
   const { data: waitingUser, error: findError } = await query.limit(1).maybeSingle();
@@ -41,9 +46,13 @@ export async function findMatch(userId: string, mode: ChatMode) {
       .select('id');
 
     if (updateError || !updatedUsers || updatedUsers.length < 2) {
-      // If we couldn't match both (e.g. someone else grabbed one), return null
-      // We might need to revert our own status if it was partially updated, 
-      // but 'in' with 'eq' should be atomic at the row level.
+      // If we couldn't match both (e.g. someone else grabbed one), revert any matches we claimed
+      if (updatedUsers && updatedUsers.length > 0) {
+        await supabase
+          .from('users_temp')
+          .update({ status: 'waiting' })
+          .in('id', updatedUsers.map((u: any) => u.id));
+      }
       return null;
     }
 

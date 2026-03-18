@@ -31,37 +31,33 @@ export default function MessageBubble({ message, isMe }: MessageBubbleProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        type: "spring", 
-        stiffness: 260, 
-        damping: 20 
-      }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex w-full mb-6",
+        "flex w-full px-4 mb-2",
         isMe ? "justify-end" : "justify-start"
       )}
     >
       <div
         className={cn(
-          "relative max-w-[85%] sm:max-w-[75%] px-5 py-3.5 rounded-2xl shadow-xl transition-all duration-300",
+          "max-w-[85%] px-4 py-2.5 rounded-[1.25rem] text-[15px] leading-snug shadow-sm transition-all duration-300",
           isMe 
-            ? "bg-gradient-to-br from-primary/90 to-primary text-primary-foreground rounded-tr-none shadow-primary/10" 
-            : "bg-card/40 backdrop-blur-xl border border-border/50 text-foreground rounded-tl-none ring-1 ring-white/5 shadow-black/5"
+            ? "bg-[#FACC15] text-black font-semibold rounded-br-[0.25rem]" 
+            : "bg-[#1A1A1A] text-white/90 rounded-bl-[0.25rem]",
+          message.content.startsWith('[IMAGE]') && "p-1 bg-transparent !shadow-none"
         )}
       >
-        <p className="whitespace-pre-wrap break-words leading-relaxed font-medium text-[15px] sm:text-base">
-          {message.content}
-        </p>
-        
-        <div className={cn(
-          "mt-1.5 text-[10px] font-bold uppercase tracking-widest opacity-40 flex items-center gap-1.5",
-          isMe ? "justify-end" : "justify-start"
-        )}>
-          <span>{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          {isMe && <div className="w-1 h-1 rounded-full bg-primary-foreground/40" />}
-        </div>
+        {message.content.startsWith('[IMAGE]') ? (
+          <img 
+            src={message.content.replace('[IMAGE]', '')} 
+            alt="Shared image" 
+            className="max-h-[300px] max-w-full rounded-xl object-contain"
+          />
+        ) : (
+          <p className="whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+        )}
       </div>
     </motion.div>
   );
