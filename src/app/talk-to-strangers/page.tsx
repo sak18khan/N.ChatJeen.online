@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Talk to Strangers | Meeting New People Made Easy | ChatJeen',
-  description: 'Looking to talk to strangers online? ChatJeen is the fastest way to connect, chat, and make new friends globally with text and voice.',
+  description: 'Looking to talk to strangers online? ChatJeen is the fastest way to connect, chat, and make new friends globally with secure text chat.',
 };
 
 export default function TalkToStrangersPage() {
@@ -69,17 +69,12 @@ export default function TalkToStrangersPage() {
            </div>
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Your Next Friend is Waiting</h2>
            <p className="text-muted-foreground font-medium max-w-lg mx-auto">
-             No downloads, no hassle. Choose text or voice and jump right into the global conversation.
+             No downloads, no hassle. Join our lightning-fast text chat and jump right into the global conversation.
            </p>
            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link href="/matching?mode=text">
                 <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest w-full sm:w-auto">
                    Start Texting
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest w-full sm:w-auto">
-                   Start Talking
                 </Button>
               </Link>
            </div>

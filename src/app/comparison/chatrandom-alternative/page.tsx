@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Chatrandom Alternative | Modern Anonymous Chat | ChatJeen',
-  description: 'Searching for a Chatrandom alternative? ChatJeen is the modern, fast, and secure way to chat with strangers online via high-quality text and voice.',
+  description: 'Searching for a Chatrandom alternative? ChatJeen is the modern, fast, and secure way to chat with strangers online via high-quality text chat.',
 };
 
 export default function ChatrandomAlternativePage() {
@@ -23,7 +23,7 @@ export default function ChatrandomAlternativePage() {
     {
       label: 'Media Quality',
       competitor: 'Standard WebRTC, often compressed',
-      chatjeen: 'High-fidelity audio and lightning-fast text'
+      chatjeen: 'Lightning-fast text delivery'
     },
     {
       label: 'Matching Speed',
@@ -61,8 +61,8 @@ export default function ChatrandomAlternativePage() {
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Audio Excellence</h3>
-              <p className="text-muted-foreground text-sm">Instead of glitchy video feeds, we focus on providing the absolute best encrypted Voice Chat experience on the market.</p>
+              <h3 className="text-xl font-bold uppercase italic tracking-tight">Text Excellence</h3>
+              <p className="text-muted-foreground text-sm">Instead of glitchy video feeds, we focus on providing the absolute best encrypted Text Chat experience on the market.</p>
            </div>
         </section>
 
@@ -93,15 +93,10 @@ export default function ChatrandomAlternativePage() {
         <section className="bg-primary/5 border border-primary/20 rounded-[3rem] p-12 text-center space-y-8">
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Make the Switch Today</h2>
            <p className="text-muted-foreground max-w-lg mx-auto">Experience the difference a modern infrastructure makes. Click below and match instantly.</p>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+           <div className="flex justify-center">
               <Link href="/matching?mode=text">
-                <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
-                   Start Texting
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Start Voice Call
+                <Button className="bg-primary text-primary-foreground font-black px-12 h-16 rounded-2xl shadow-xl hover:scale-105 transition-transform text-lg uppercase tracking-widest">
+                   Start Texting Now
                 </Button>
               </Link>
            </div>

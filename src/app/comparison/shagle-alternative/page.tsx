@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Shagle Alternative | Premium Random Chat for Free | ChatJeen',
-  description: 'Looking for a Shagle alternative? Enjoy a premium-feeling random chat experience for free on ChatJeen. Fast matching, high privacy, and no hidden fees.',
+  description: 'Looking for a Shagle alternative? Enjoy a premium-feeling random text chat experience for free on ChatJeen. Fast matching, high privacy, and no hidden fees.',
 };
 
 export default function ShagleAlternativePage() {
@@ -26,9 +26,9 @@ export default function ShagleAlternativePage() {
       chatjeen: 'Community guidelines enforced for a better experience'
     },
     {
-      label: 'Audio Quality',
-      competitor: 'Standard web audio',
-      chatjeen: 'High-fidelity encrypted voice channels'
+      label: 'Matching Speed',
+      competitor: 'Standard routing',
+      chatjeen: 'Lightning-fast instant matchmaking'
     }
   ];
 
@@ -61,8 +61,8 @@ export default function ShagleAlternativePage() {
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Text & Voice</h3>
-              <p className="text-muted-foreground text-sm">Connect your way. Whether you prefer the anonymity of text or the intimacy of voice, the choice is yours, for free.</p>
+              <h3 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h3>
+              <p className="text-muted-foreground text-sm">Connect instantly. Our lightning-fast text interface is designed for real-time engagement and authentic connection.</p>
            </div>
         </section>
 
@@ -93,15 +93,10 @@ export default function ShagleAlternativePage() {
         <section className="bg-primary/5 border border-primary/20 rounded-[3rem] p-12 text-center space-y-8">
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Upgrade Your Chat Today</h2>
            <p className="text-muted-foreground max-w-lg mx-auto">Stop settling for limited freemium apps. Try the platform built for real connections.</p>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+           <div className="flex justify-center">
               <Link href="/matching?mode=text">
-                <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
-                   Start Texting
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Start Voice Call
+                <Button className="bg-primary text-primary-foreground font-black px-12 h-16 rounded-2xl shadow-xl hover:scale-105 transition-transform text-lg uppercase tracking-widest">
+                   Start Texting Now
                 </Button>
               </Link>
            </div>

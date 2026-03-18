@@ -27,7 +27,7 @@ interface ChatUIProps {
   myId: string;
   onSkip: () => void;
   onReport: () => void;
-  mode: 'text' | 'voice';
+  mode: 'text';
   variant?: 'full' | 'minimal';
 }
 
@@ -406,7 +406,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
     <div className="flex flex-col w-full relative transition-all duration-300 h-screen h-[100dvh] max-w-4xl mx-auto my-0 bg-black overflow-hidden">
       
       {/* NEW HEADER: STICKY & MINIMAL */}
-      <header className="sticky top-0 z-50 bg-[#000000] border-b border-white/10 px-4 h-14 flex items-center justify-center shrink-0">
+      <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10 px-4 h-14 flex items-center justify-center shrink-0">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
               <h1 className="text-base font-black italic tracking-tighter uppercase text-white">Chat<span className="text-yellow-400 not-italic">Jeen</span></h1>
               <span className="text-[10px] text-white/40 font-medium">www.chatjeen.online</span>
@@ -433,7 +433,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
         {/* MATCH PROFILE CARD: SLEEK & INTEGRATED */}
         {variant === 'full' && status === 'connected' && (
           <div className="mx-4 mt-6 mb-2">
-            <div className="bg-[#111111] border border-white/5 rounded-2xl p-4 flex flex-col gap-3 shadow-lg relative overflow-hidden">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl relative overflow-hidden">
                 {/* Subtle background glow */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 blur-3xl rounded-full translate-x-10 -translate-y-10" />
                 
@@ -560,7 +560,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
 
         {/* NEW FOOTER AREA: MATCHING REFERENCE */}
         {status === 'connected' && (
-            <div className="p-4 sm:p-6 bg-[#000000] border-t border-white/5 pb-8">
+            <div className="p-4 sm:p-6 bg-black/40 backdrop-blur-xl border-t border-white/10 pb-8">
                 <div className="flex items-center gap-3">
                     {/* LEAVE BUTTON */}
                     <button 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Zap, ShieldCheck, Laptop, AlertCircle } from 'lucide-react';
@@ -21,6 +21,10 @@ function MatchingContent() {
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<'initializing' | 'searching'>('initializing');
     const [myIdentity, setMyIdentity] = useState<{flag: string, countryInitial: string} | null>(null);
+    
+    // Use stable ID and prevent double-matching
+    const myId = useMemo(() => uuidv4(), []);
+    const matchStarted = useRef(false);
 
     useEffect(() => {
         async function loadIdentity() {
@@ -36,7 +40,9 @@ function MatchingContent() {
     }, []);
 
     useEffect(() => {
-        const myId = uuidv4();
+        if (matchStarted.current) return;
+        matchStarted.current = true;
+        
         setUserId(myId);
         
         let pingInterval: NodeJS.Timeout;
@@ -45,11 +51,11 @@ function MatchingContent() {
         const startMatching = async () => {
             setStatus('searching');
             
-            // Anti-spam cooldown
+            // Anti-spam cooldown (reduced to 1s)
             const lastMatchStr = localStorage.getItem('chatjeen_last_match_time');
             if (lastMatchStr) {
                 const lastMatchInt = parseInt(lastMatchStr, 10);
-                if (Date.now() - lastMatchInt < 1500) {
+                if (Date.now() - lastMatchInt < 1000) {
                     setError('Please wait a moment before searching again.');
                     return;
                 }

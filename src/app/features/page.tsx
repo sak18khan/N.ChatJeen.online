@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { MessageCircle, Mic, Gamepad2, Zap, ArrowRight, ShieldCheck, Target } from 'lucide-react';
+import { MessageCircle, Gamepad2, Zap, ArrowRight, ShieldCheck, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: 'Features | ChatJeen Anonymous Chat & Voice',
-  description: 'Explore the powerful features of ChatJeen: Anonymous text chat and high-quality voice calls.',
+  title: 'Features | ChatJeen Anonymous Text Chat',
+  description: 'Explore the powerful features of ChatJeen: Anonymous text chat, instant matching, and secure conversations.',
 };
 
 export default function FeaturesPage() {
@@ -17,10 +17,10 @@ export default function FeaturesPage() {
       link: '/matching?mode=text'
     },
     {
-      icon: Mic,
-      title: 'Encrypted Voice Calls',
-      desc: 'Experience crystal clear voice communication. Our encrypted signaling ensures your conversations stay private.',
-      link: '/matching?mode=voice'
+      icon: Zap,
+      title: 'Lightning Fast Matching',
+      desc: 'Our optimized matching algorithm ensures you connect with a partner in milliseconds. No more waiting in long queues.',
+      link: '/matching?mode=text'
     },
     {
       icon: ShieldCheck,

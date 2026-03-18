@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, Gamepad2, UserX } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, Gamepad2, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: 'Anonymous Chat | Private & Secure Text & Voice | ChatJeen',
-  description: 'Join ChatJeen for the ultimate anonymous chat experience. Instantly connect with strangers worldwide via secure text and high-fidelity voice. No sign-up required.',
+  title: 'Anonymous Chat | Private & Secure Text Chat | ChatJeen',
+  description: 'Join ChatJeen for the ultimate anonymous chat experience. Instantly connect with strangers worldwide via secure, lightning-fast text chat. No sign-up required.',
 };
 
 export default function AnonymousChatPage() {
@@ -37,9 +37,9 @@ export default function AnonymousChatPage() {
               <p className="text-muted-foreground text-sm">Match with a stranger in milliseconds. Our optimized routing ensures you spend zero time waiting.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Mic className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Text & Voice</h3>
-              <p className="text-muted-foreground text-sm">Choose how you want to interact. Enjoy lightning-fast text chat or jump into high-fidelity encrypted voice calls.</p>
+              <MessageCircle className="w-10 h-10 text-primary" />
+              <h3 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h3>
+              <p className="text-muted-foreground text-sm">Enjoy the purest form of human connection. Our lightning-fast text interface is designed for real-time engagement.</p>
            </div>
         </section>
 
@@ -47,10 +47,10 @@ export default function AnonymousChatPage() {
            <h2 className="text-3xl font-black uppercase italic tracking-tighter text-center">Why Choose ChatJeen for <span className="text-primary not-italic">Anonymous Chat?</span></h2>
            <div className="prose prose-invert max-w-none text-muted-foreground">
              <p className="text-lg leading-relaxed">
-               In a digital world where every action is tracked, finding a truly <strong>anonymous chat</strong> platform is rare. ChatJeen was built from the ground up to prioritize your privacy and security. Unlike other platforms that secretly log your IP or require social logins, we operate on a strict zero-knowledge model when it comes to your true identity.
+                In a digital world where every action is tracked, finding a truly <strong>anonymous chat</strong> platform is rare. ChatJeen was built from the ground up to prioritize your privacy and security. Unlike other platforms that secretly log your IP or require social logins, we operate on a strict zero-knowledge model when it comes to your true identity.
              </p>
              <p className="text-lg leading-relaxed mt-4">
-               Whether you're looking for deep conversations, wanting to practice a new language, or just bored and seeking random encounters, our platform provides a safe, moderated environment. Enjoy features like real-time text delivery, crystal-clear WebRTC voice, and an intuitive UI that gets out of your way.
+                Whether you're looking for deep conversations, wanting to practice a new language, or just bored and seeking random encounters, our platform provides a safe, moderated environment. Enjoy features like real-time text delivery, a sleek dark-mode UI, and an intuitive experience that gets out of your way.
              </p>
            </div>
         </section>
@@ -61,11 +61,6 @@ export default function AnonymousChatPage() {
               <Link href="/matching?mode=text">
                 <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
                    Join Text Chat
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Join Voice Chat
                 </Button>
               </Link>
            </div>
@@ -80,3 +75,4 @@ export default function AnonymousChatPage() {
     </main>
   );
 }
+

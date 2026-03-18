@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { HeartHandshake, MapPin, Sparkles, MessageCircle, Mic, Users, Zap } from 'lucide-react';
+import { HeartHandshake, MapPin, Sparkles, MessageCircle, Users, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Meet New People Online | Instant Random Chat | ChatJeen',
-  description: 'Looking to meet new people online? ChatJeen connects you instantly with strangers around the world for fun, spontaneous text and voice conversations.',
+  description: 'Looking to meet new people online? ChatJeen connects you instantly with strangers around the world for fun, spontaneous anonymous text conversations.',
 };
 
 export default function MeetNewPeoplePage() {
@@ -51,25 +51,16 @@ export default function MeetNewPeoplePage() {
         <section className="space-y-8 mt-12 bg-accent/10 p-10 rounded-[3rem] border border-border text-center">
            <h2 className="text-3xl font-black uppercase italic tracking-tighter">Choose Your Vibe</h2>
            <p className="text-muted-foreground max-w-xl mx-auto">
-             How do you prefer to meet new people? ChatJeen offers two distinct ways to connect based on your mood.
+             How do you prefer to meet new people? ChatJeen offers a focused way to connect based on your mood.
            </p>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-left mt-8 max-w-3xl mx-auto">
-             <div className="space-y-4 bg-background p-6 rounded-2xl border border-border">
+           <div className="grid grid-cols-1 gap-8 text-left mt-8 max-w-xl mx-auto">
+             <div className="space-y-4 bg-background p-8 rounded-3xl border border-border shadow-sm">
                <h4 className="font-bold text-2xl uppercase italic text-primary flex items-center gap-2">
                  <MessageCircle className="w-6 h-6"/> Text Chat
                </h4>
                <p className="text-muted-foreground">Fast, casual, and low-pressure. Ideal for quick check-ins, practicing languages, or chatting when you need to be quiet.</p>
                <Link href="/matching?mode=text" className="inline-block mt-4 text-sm font-bold uppercase tracking-widest text-primary hover:underline">
                   Start Texting →
-               </Link>
-             </div>
-             <div className="space-y-4 bg-background p-6 rounded-2xl border border-border">
-               <h4 className="font-bold text-2xl uppercase italic text-primary flex items-center gap-2">
-                 <Mic className="w-6 h-6"/> Voice Chat
-               </h4>
-               <p className="text-muted-foreground">Deep, engaging, and personal. Perfect for long conversations and forming stronger connections instantly over audio.</p>
-               <Link href="/matching?mode=voice" className="inline-block mt-4 text-sm font-bold uppercase tracking-widest text-primary hover:underline">
-                  Start Talking →
                </Link>
              </div>
            </div>

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Monkey App Alternative | Browser-Based Random Chat | ChatJeen',
-  description: 'Looking for a Monkey App alternative? ChatJeen brings fast, secure, and fun random text and voice chat directly to your browser—no app download needed.',
+  description: 'Looking for a Monkey App alternative? ChatJeen brings fast, secure, and fun random text chat directly to your browser—no app download needed.',
 };
 
 export default function MonkeyAppAlternativePage() {
@@ -23,7 +23,7 @@ export default function MonkeyAppAlternativePage() {
     {
       label: 'Focus',
       competitor: 'Short video clips & swiping',
-      chatjeen: 'Deep, engaging Text and Voice conversations'
+      chatjeen: 'Deep, engaging Text conversations'
     },
     {
       label: 'Privacy',
@@ -62,7 +62,7 @@ export default function MonkeyAppAlternativePage() {
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <MessageCircle className="w-10 h-10 text-primary" />
               <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Conversations</h3>
-              <p className="text-muted-foreground text-sm">Skip the superficial 15-second video judgments. Jump into a voice or text chat where personality actually matters.</p>
+              <p className="text-muted-foreground text-sm">Skip the superficial 15-second video judgments. Jump into a text chat where personality actually matters.</p>
            </div>
         </section>
 
@@ -93,15 +93,10 @@ export default function MonkeyAppAlternativePage() {
         <section className="bg-primary/5 border border-primary/20 rounded-[3rem] p-12 text-center space-y-8">
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Ready to connect?</h2>
            <p className="text-muted-foreground max-w-lg mx-auto">Just click and chat. No downloads, no sign-ups, no wait times.</p>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+           <div className="flex justify-center">
               <Link href="/matching?mode=text">
-                <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
-                   Start Texting
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Start Voice Call
+                <Button className="bg-primary text-primary-foreground font-black px-12 h-16 rounded-2xl shadow-xl hover:scale-105 transition-transform text-lg uppercase tracking-widest">
+                   Start Texting Now
                 </Button>
               </Link>
            </div>

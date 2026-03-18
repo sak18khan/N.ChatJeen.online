@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'OmeTV Alternative | Ad-Free Anonymous Chat | ChatJeen',
-  description: 'Looking for a better OmeTV alternative? ChatJeen provides a faster, safer, and cleaner environment without intrusive ads or paywalls.',
+  description: 'Looking for a better OmeTV alternative? ChatJeen provides a faster, safer, and cleaner environment for anonymous text chat without intrusive ads or paywalls.',
 };
 
 export default function OmeTvAlternativePage() {
@@ -23,7 +23,7 @@ export default function OmeTvAlternativePage() {
     {
       label: 'Platform Focus',
       competitor: 'Video-heavy, high ban rates',
-      chatjeen: 'Text & Voice, focused on stable connections'
+      chatjeen: 'Pure Text Chat, focused on stable connections'
     },
     {
       label: 'Account Requirement',
@@ -44,7 +44,7 @@ export default function OmeTvAlternativePage() {
              A Better <span className="text-primary not-italic">OmeTV Alternative</span>
           </h1>
           <p className="text-muted-foreground text-xl max-w-2xl mx-auto font-medium leading-relaxed">
-             Tired of the constant ads, pay-to-chat features, and forced logins on OmeTV? Switch to ChatJeen for a clean, completely free random chatting experience.
+             Tired of the constant ads, pay-to-chat features, and forced logins on OmeTV? Switch to ChatJeen for a clean, completely free random text chatting experience.
           </p>
         </header>
 
@@ -93,15 +93,10 @@ export default function OmeTvAlternativePage() {
         <section className="bg-primary/5 border border-primary/20 rounded-[3rem] p-12 text-center space-y-8">
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Experience the Upgrade</h2>
            <p className="text-muted-foreground max-w-lg mx-auto">Ditch the ads. Join thousands of users who prefer the cleaner, faster ChatJeen experience.</p>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+           <div className="flex justify-center">
               <Link href="/matching?mode=text">
-                <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
-                   Start Texting
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Start Voice Call
+                <Button className="bg-primary text-primary-foreground font-black px-12 h-16 rounded-2xl shadow-xl hover:scale-105 transition-transform text-lg uppercase tracking-widest">
+                   Start Texting Now
                 </Button>
               </Link>
            </div>

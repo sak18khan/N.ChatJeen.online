@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Chatroulette Alternative | A Safer Way to Chat | ChatJeen',
-  description: 'Looking for a better Chatroulette alternative? ChatJeen provides a faster, safer, and cleaner environment for random video, text, and voice chat.',
+  description: 'Looking for a better Chatroulette alternative? ChatJeen provides a faster, safer, and cleaner environment for random anonymous text chat.',
 };
 
 export default function ChatrouletteAlternativePage() {
@@ -18,7 +18,7 @@ export default function ChatrouletteAlternativePage() {
     {
       label: 'Focus',
       competitor: 'Video first, leading to frequent exposure',
-      chatjeen: 'Text & Voice first, prioritizing conversation'
+      chatjeen: 'Pure Text-first, prioritizing conversation'
     },
     {
       label: 'User Interface',
@@ -52,7 +52,7 @@ export default function ChatrouletteAlternativePage() {
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <ShieldCheck className="w-10 h-10 text-primary" />
               <h3 className="text-xl font-bold uppercase italic tracking-tight">Safer Environment</h3>
-              <p className="text-muted-foreground text-sm">By focusing on Text and Voice, we significantly reduce the risk of unwanted visual exposure, making ChatJeen a safer place to talk.</p>
+              <p className="text-muted-foreground text-sm">By focusing on high-quality Text Chat, we significantly reduce the risk of unwanted visual exposure, making ChatJeen a safer place to talk.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <Zap className="w-10 h-10 text-primary" />

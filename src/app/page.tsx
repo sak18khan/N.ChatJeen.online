@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, Mic, ShieldCheck, Zap, Laptop, Heart, Target, ArrowRight, Menu, Star, Check } from 'lucide-react';
+import { MessageCircle, ShieldCheck, Zap, Laptop, Heart, Target, ArrowRight, Menu, Star, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -13,11 +13,10 @@ import TestimonialCard from '@/components/TestimonialCard';
 import { cn } from '@/lib/utils';
 
 export default function HomePage() {
-  const [matchingMode, setMatchingMode] = useState<ChatMode>('text');
   const router = useRouter();
 
   const handleStart = () => {
-    router.push(`/matching?mode=${matchingMode}`);
+    router.push(`/matching?mode=text`);
   };
 
   return (
@@ -76,36 +75,13 @@ export default function HomePage() {
             <span className="text-[11px] font-bold text-white/60">10,482 online now</span>
           </div>
 
-          {/* Mode Selection */}
-          <div className="w-full flex p-1.5 bg-[#111111] rounded-2xl border border-white/5">
-            <button 
-              onClick={() => setMatchingMode('text')}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2.5 py-3 rounded-xl transition-all duration-300",
-                matchingMode === 'text' ? "bg-yellow-400 text-black font-black" : "text-white/40 font-bold hover:text-white/60"
-              )}
-            >
-              <MessageCircle className={cn("w-4 h-4", matchingMode === 'text' && "fill-black/10")} />
-              <span className="text-sm">Text</span>
-            </button>
-            <button 
-              onClick={() => setMatchingMode('voice')}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2.5 py-3 rounded-xl transition-all duration-300",
-                matchingMode === 'voice' ? "bg-yellow-400 text-black font-black" : "text-white/40 font-bold hover:text-white/60"
-              )}
-            >
-              <Mic className={cn("w-4 h-4", matchingMode === 'voice' && "fill-black/10")} />
-              <span className="text-sm">Audio</span>
-            </button>
-          </div>
-
           {/* Start CTA */}
           <button 
             onClick={handleStart}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black text-lg py-5 rounded-[1.5rem] shadow-[0_15px_30px_rgba(250,204,21,0.2)] active:scale-95 transition-all uppercase tracking-widest mt-4"
+            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black text-lg py-5 rounded-[2.5rem] shadow-[0_15px_30px_rgba(250,204,21,0.2)] active:scale-95 transition-all uppercase tracking-widest mt-4 flex items-center justify-center gap-3"
           >
             Start Chatting
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
 
@@ -131,9 +107,9 @@ export default function HomePage() {
 
               <div className="relative grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24">
                   {[
-                      { step: "01", title: "Choose Your Mode", desc: "Select text for quiet messaging or audio for a more personal connection.", icon: Zap },
-                      { step: "02", title: "Instant Match", desc: "Our smart algorithm instantly connects you with someone new.", icon: Laptop },
-                      { step: "03", title: "Start Chatting", desc: "Your private, secure session begins immediately. Have fun!", icon: Heart }
+                      { step: "01", title: "Join Queue", desc: "One click and our smart matchmaker starts looking for your partner.", icon: Zap },
+                      { step: "02", title: "Instant Match", desc: "No registration required. Get connected with a real human in seconds.", icon: Laptop },
+                      { step: "03", title: "Start Chatting", desc: "Your private, secure chat begins immediately. Have fun!", icon: Heart }
                   ].map((item, i) => (
                       <motion.div 
                           key={i}
@@ -171,8 +147,8 @@ export default function HomePage() {
                       { title: "100% Private", desc: "We don't store your chats. Every session is unique and disappears when you leave.", icon: Zap },
                       { title: "Stay Anonymous", desc: "Your identity is hidden, ensuring a secure and pressure-free environment to chat.", icon: ShieldCheck },
                       { title: "Instantly Connect", desc: "No waiting around. We instantly pair you with someone eager to talk.", icon: Target },
-                      { title: "Total Control", desc: "Not feeling the vibe? A single click skips to a brand new conversation.", icon: Mic }, 
-                      { title: "Lightning Fast", desc: "Enjoy smooth, lag-free text and high-quality voice calls seamlessly.", icon: Laptop },
+                      { title: "Total Control", desc: "Not feeling the vibe? A single click skips to a brand new conversation.", icon: MessageCircle }, 
+                      { title: "Lightning Fast", desc: "Enjoy smooth, lag-free text messaging on any device or network.", icon: Laptop },
                       { title: "Always Free", desc: "No hidden fees, ever. Connect with the world without spending a dime.", icon: Zap }
                   ].map((feature, i) => (
                       <motion.div 
@@ -228,7 +204,7 @@ export default function HomePage() {
                           author: "Sarah", 
                           age: 21, 
                           avatarColor: "#ec4899",
-                          content: "The anonymous audio mode is exactly what I needed. It's so refreshing to just hop on and have a real conversation without any pressure." 
+                          content: "Finding people to practice English with is so easy here. It's safe, fast, and I've met some really interesting partners." 
                       },
                       { 
                           author: "Jordan", 
@@ -294,7 +270,6 @@ export default function HomePage() {
                           <Link href="/talk-to-strangers" className="hover:text-yellow-400 transition-colors">Talk to Strangers</Link>
                           <Link href="/meet-new-people-online" className="hover:text-yellow-400 transition-colors">Meet New People</Link>
                           <Link href="/free-chat-rooms" className="hover:text-yellow-400 transition-colors">Free Chat Rooms</Link>
-                          <Link href="/anonymous-voice-chat" className="hover:text-yellow-400 transition-colors">Anonymous Voice Chat</Link>
                       </div>
                   </div>
 

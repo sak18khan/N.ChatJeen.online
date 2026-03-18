@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Free Chat Rooms | 100% Free Anonymous Chat | ChatJeen',
-  description: 'Join the best free chat rooms online. ChatJeen offers 100% free, secure, and private text and voice chat rooms with people from all over the world. No login required.',
+  description: 'Join the best free chat rooms online. ChatJeen offers 100% free, secure, and private text chat rooms with people from all over the world. No login required.',
 };
 
 export default function FreeChatRoomsPage() {
@@ -59,17 +59,12 @@ export default function FreeChatRoomsPage() {
            <MessageSquareText className="w-16 h-16 text-primary mx-auto animate-pulse" />
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Enter a Free Room Now</h2>
            <p className="text-muted-foreground font-medium max-w-lg mx-auto">
-             Ready to meet your next conversation partner? Choose text or voice to get started.
+             Ready to meet your next conversation partner? Start our text chat to get connected.
            </p>
            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link href="/matching?mode=text">
                 <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest w-full sm:w-auto">
                    Enter Text Room
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest w-full sm:w-auto">
-                   Enter Voice Room
                 </Button>
               </Link>
            </div>

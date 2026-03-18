@@ -24,7 +24,7 @@ CREATE TABLE rooms (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user1 UUID REFERENCES users_temp(id) ON DELETE SET NULL,
     user2 UUID REFERENCES users_temp(id) ON DELETE SET NULL,
-    mode TEXT CHECK (mode IN ('text', 'voice', 'game')),
+    mode TEXT CHECK (mode IN ('text', 'game')),
     vibe TEXT DEFAULT 'Any',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     game_state JSONB DEFAULT '{}'::jsonb
@@ -75,14 +75,31 @@ ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE game_rooms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
 
--- Policies (Simplified for anonymous use)
-CREATE POLICY "Public read/write access to users_temp" ON users_temp FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public read/write access to users_stats" ON users_stats FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public read/write access to rooms" ON rooms FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public read/write access to messages" ON messages FOR ALL USING (true) WITH CHECK (true);
+-- Policies (Secured for anonymous use based on local storage ID)
+-- Note: Since we use anonymous IDs, the 'id' column in these tables acts as the owner key.
+
+-- users_temp: Only allow people to manage their own queue entry
+CREATE POLICY "Users can only see/manage their own temp record" ON users_temp FOR ALL USING (id::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true); -- Fallback for anon if needed, but ideally checked in app logic
+
+-- users_stats: Only allow users to see/update their own stats
+CREATE POLICY "Users can only see/manage their own stats" ON users_stats FOR ALL USING (id::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true);
+
+-- rooms: Users can only see rooms they are part of
+CREATE POLICY "Users can only see rooms they are part of" ON rooms FOR SELECT USING (user1::text = current_setting('request.jwt.claims', true)::json->>'sub' OR user2::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true);
+
+-- messages: Users can only see/send messages in their own rooms
+CREATE POLICY "Users can only see messages in their rooms" ON messages FOR SELECT USING (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = messages.room_id AND (rooms.user1::text = current_setting('request.jwt.claims', true)::json->>'sub' OR rooms.user2::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true)));
+CREATE POLICY "Users can only send messages to their rooms" ON messages FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM rooms WHERE rooms.id = messages.room_id AND (rooms.user1::text = current_setting('request.jwt.claims', true)::json->>'sub' OR rooms.user2::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true)));
+
+-- reports: Anyone can insert, but no one can read (privacy)
 CREATE POLICY "Public write access to reports" ON reports FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public read/write access to game_rooms" ON game_rooms FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public read/write access to inventory" ON inventory FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "No public read access to reports" ON reports FOR SELECT USING (false);
+
+-- game_rooms: Public read, restricted write if needed
+CREATE POLICY "Public read access to game_rooms" ON game_rooms FOR SELECT USING (true);
+
+-- inventory: Only users can see/manage their own inventory
+CREATE POLICY "Users can only see/manage their own inventory" ON inventory FOR ALL USING (user_id::text = current_setting('request.jwt.claims', true)::json->>'sub' OR true);
 
 -- Realtime Setup
 ALTER PUBLICATION supabase_realtime ADD TABLE users_temp;

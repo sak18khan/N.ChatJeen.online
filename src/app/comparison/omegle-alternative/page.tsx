@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Mic, Gamepad2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle, Gamepad2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Omegle Alternative | The Best Anonymous Chat Platform',
-  description: 'Looking for an Omegle alternative? ChatJeen offers secure, moderated anonymous chat and high-quality voice calls. No sign-up required.',
+  description: 'Looking for an Omegle alternative? ChatJeen offers secure, moderated anonymous text chat. No sign-up required.',
 };
 
 export default function OmegleAlternativePage() {
@@ -18,7 +18,7 @@ export default function OmegleAlternativePage() {
     {
       label: 'Interaction',
       omegle: 'Text & Video only',
-      chatjeen: 'Secure Text & High-fidelity Voice'
+      chatjeen: 'Secure, lightning-fast Text Chat'
     },
     {
       label: 'Privacy',
@@ -55,9 +55,9 @@ export default function OmegleAlternativePage() {
               <p className="text-muted-foreground text-sm">Real-time, instant matching with people who share your interests.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Mic className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Secure Voice</h3>
-              <p className="text-muted-foreground text-sm">Talk freely with encrypted voice calls. No phone number needed.</p>
+              <Zap className="w-10 h-10 text-primary" />
+              <h3 className="text-xl font-bold uppercase italic tracking-tight">Instant Matching</h3>
+              <p className="text-muted-foreground text-sm">Our smart matchmaker pairs you with the perfect conversation partner in seconds.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <ShieldCheck className="w-10 h-10 text-primary" />
@@ -92,15 +92,10 @@ export default function OmegleAlternativePage() {
 
         <section className="bg-primary/5 border border-primary/20 rounded-[3rem] p-12 text-center space-y-8">
            <h2 className="text-4xl font-black uppercase italic tracking-tighter">Ready to meet someone new?</h2>
-           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+           <div className="flex justify-center">
               <Link href="/matching?mode=text">
-                <Button className="bg-primary text-primary-foreground font-black px-10 h-14 rounded-2xl shadow-xl hover:scale-105 transition-transform text-base uppercase tracking-widest">
-                   Start Text Chat
-                </Button>
-              </Link>
-              <Link href="/matching?mode=voice">
-                <Button variant="outline" className="border-primary/20 hover:bg-primary/10 font-black px-10 h-14 rounded-2xl text-base uppercase tracking-widest">
-                   Start Voice Chat
+                <Button className="bg-primary text-primary-foreground font-black px-12 h-16 rounded-2xl shadow-xl hover:scale-105 transition-transform text-lg uppercase tracking-widest">
+                   Start Chatting Now
                 </Button>
               </Link>
            </div>

@@ -1,21 +1,7 @@
 {
   "rules": {
-    "rooms": {
-      "$room_id": {
-        "presence": {
-          ".read": true,
-          "$user_id": {
-            ".write": "newData.val() == true || !newData.exists()"
-          }
-        },
-        "signals": {
-          ".read": true,
-          ".write": true,
-          "$signal_id": {
-             ".validate": "newData.hasChildren(['from', 'signals']) && newData.child('from').isString() && newData.child('from').val().length < 50"
-          }
-        }
-      }
-    }
+    ".read": false,
+    ".write": false
   }
 }
+

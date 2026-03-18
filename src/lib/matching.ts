@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 
 export type UserStatus = 'waiting' | 'matched';
-export type ChatMode = 'text' | 'voice';
+export type ChatMode = 'text';
 
 export async function updatePing(userId: string) {
   try {
@@ -23,7 +23,7 @@ export async function findMatch(userId: string, mode: ChatMode) {
     .from('users_temp')
     .select('id')
     .eq('status', 'waiting')
-    .eq('vibe', mode) // Separate text vs voice queues
+    .eq('vibe', mode) // Text queue (retaining 'vibe' column for future expansion if needed)
     .neq('id', userId)
     .gt('last_ping', new Date(Date.now() - 30000).toISOString())
     .order('created_at', { ascending: true });

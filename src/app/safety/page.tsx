@@ -18,7 +18,7 @@ export default function SafetyPage() {
     {
       icon: Lock,
       title: 'End-to-End Encryption',
-      description: 'Your voice calls and text messages are encrypted. We don\'t logs or store your private conversations.',
+      description: 'Your private text messages are encrypted. We don\'t log or store your private conversations.',
     },
     {
       icon: ShieldCheck,

@@ -1,7 +1,7 @@
 {
   "name": "ChatJeen",
   "short_name": "ChatJeen",
-  "description": "Connect anonymously with people around the world for text chat, voice calls, and multiplayer games.",
+  "description": "Connect anonymously with people around the world for lightning-fast text chat and multiplayer games.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
