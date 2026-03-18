@@ -108,7 +108,7 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
                 flag: fData.country_code ? getFlagEmoji(fData.country_code) : '🌐',
             };
         } catch (fError) {
-            console.error('All Geo-IP Detections failed:', fError);
+            console.warn('All Geo-IP Detections failed (likely blocked by adblocker):', fError);
             return defaultIdentity;
         }
     }

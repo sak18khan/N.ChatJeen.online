@@ -29,7 +29,7 @@ function MatchingContent() {
                 const identity = await detectIdentity();
                 setMyIdentity(identity);
             } catch (e) {
-                console.error('Identity load failed', e);
+                console.warn('Identity load fallback activated', e);
             }
         }
         loadIdentity();
