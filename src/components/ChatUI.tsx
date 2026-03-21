@@ -9,7 +9,7 @@ import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { generateIcebreaker } from '@/lib/groq';
 import Toast from './Toast';
-import { findMatch } from '@/lib/matching';
+import { findMatch, updatePing } from '@/lib/matching';
 import { detectIdentity, UserIdentity } from '@/lib/identity';
 import ChatKarmaOverlay from './ChatKarmaOverlay';
 import Link from 'next/link';
@@ -57,6 +57,8 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const disconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- IMAGE UPLOAD LOGIC ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,6 +141,18 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, [status]);
+  
+  // --- HEARTBEAT LOGIC ---
+  useEffect(() => {
+    if (status === 'connected' && myId) {
+        heartbeatIntervalRef.current = setInterval(() => {
+            updatePing(myId);
+        }, 10000);
+    }
+    return () => {
+        if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
+    };
+  }, [status, myId]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -279,16 +293,30 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
             });
         }
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      .on('presence', { event: 'join' }, ({ key }) => {
+        if (key !== myId) {
+            console.log('Partner re-joined presence', key);
+            if (disconnectTimeoutRef.current) {
+                clearTimeout(disconnectTimeoutRef.current);
+                disconnectTimeoutRef.current = null;
+            }
+        }
+      })
+      .on('presence', { event: 'leave' }, ({ key }) => {
         // If the other person leaves presence (e.g. closes tab, drops connection)
         if (key !== myId) {
             console.log('Partner left presence via channel drop', key);
             if (ghostTimeout) clearTimeout(ghostTimeout);
-            setStatus('disconnected');
-            // Assuming this implies they skipped or refreshed
-            if (secondsConnected > 15 || messages.length > 5) {
-                setShowKarma(true);
-            }
+            
+            // Add a grace period of 5 seconds before disconnecting
+            if (disconnectTimeoutRef.current) clearTimeout(disconnectTimeoutRef.current);
+            disconnectTimeoutRef.current = setTimeout(() => {
+                console.log('Grace period expired. Disconnecting.');
+                setStatus('disconnected');
+                if (secondsConnected > 15 || messages.length > 5) {
+                    setShowKarma(true);
+                }
+            }, 5000);
         }
       })
       .subscribe(async (subStatus) => {
