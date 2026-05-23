@@ -161,12 +161,24 @@ export async function findMatch(
       await set(roomRef, roomDetails);
 
       const result = await runTransaction(partnerQueueRef, (currentData: MatchingEntry | null) => {
-        if (currentData && currentData.status === 'waiting') {
-          currentData.status = 'matched';
-          currentData.roomId = roomId;
-          return currentData;
+        // If currentData is null (due to empty local cache), return a placeholder matched state
+        // to let the Firebase SDK query the server for the actual data.
+        if (currentData === null) {
+          return {
+            status: 'matched',
+            roomId: roomId
+          } as any;
         }
-        return undefined; // Abort transaction if partner is not waiting
+        // If the user is waiting, claim them
+        if (currentData.status === 'waiting') {
+          return {
+            ...currentData,
+            status: 'matched',
+            roomId: roomId
+          };
+        }
+        // If they are already matched, abort transaction
+        return undefined; 
       });
 
       if (result.committed && result.snapshot.exists()) {
