@@ -5,6 +5,7 @@ CREATE TABLE users_temp (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     status TEXT CHECK (status IN ('waiting', 'matched')) DEFAULT 'waiting',
     vibe TEXT DEFAULT 'Any',
+    social_room_id UUID, -- References social_rooms(id)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     last_ping TIMESTAMPTZ DEFAULT NOW()
 );
@@ -118,3 +119,29 @@ BEGIN
         last_active = NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- social_rooms table for Room-Based Social Experience
+CREATE TABLE social_rooms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    topic TEXT NOT NULL,
+    vibe TEXT DEFAULT 'Any',
+    capacity INT DEFAULT 12,
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Update messages table to allow social_rooms reference
+-- We'll add a new column or just make the existing room_id more flexible (UUID)
+-- Since it's a migration/upgrade, we can add a social_room_id or just use room_id
+-- but the FK might fail if we keep it. For now, let's add social_room_id.
+ALTER TABLE messages ADD COLUMN social_room_id UUID REFERENCES social_rooms(id) ON DELETE CASCADE;
+
+-- Enable RLS for social_rooms
+ALTER TABLE social_rooms ENABLE ROW LEVEL SECURITY;
+
+-- social_rooms Policies
+CREATE POLICY "Public read access to social_rooms" ON social_rooms FOR SELECT USING (true);
+CREATE POLICY "Public insert access to social_rooms" ON social_rooms FOR INSERT WITH CHECK (true);
+
+-- Realtime Setup for social_rooms
+ALTER PUBLICATION supabase_realtime ADD TABLE social_rooms;

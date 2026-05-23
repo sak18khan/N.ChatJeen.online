@@ -1,4 +1,5 @@
-import { supabase } from './supabaseClient';
+import { rtdb } from './firebaseClient';
+import { ref, get } from 'firebase/database';
 
 export const ADJECTIVES = [
     'Stealthy', 'Neon', 'Rapid', 'Silent', 'Golden', 'Shadowy', 'Cyber', 'Arctic', 'Mystic', 'Cosmic',
@@ -60,12 +61,11 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
     let karma = 0;
     if (userId) {
         try {
-            const { data } = await supabase
-                .from('users_stats')
-                .select('karma')
-                .eq('id', userId)
-                .maybeSingle();
-            karma = data?.karma || 0;
+            const statsRef = ref(rtdb, `users_stats/${userId}/karma`);
+            const snapshot = await get(statsRef);
+            if (snapshot.exists()) {
+                karma = snapshot.val() || 0;
+            }
         } catch (e) {
             console.warn('Karma fetch failed:', e);
         }

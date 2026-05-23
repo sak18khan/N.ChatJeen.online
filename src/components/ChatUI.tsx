@@ -1,25 +1,24 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Smile, Info, X, Zap, Loader2, Flag, Sparkles, Clock, Globe, ShieldCheck, RefreshCw, Trophy, Menu, UserCircle, Image } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
-import MessageBubble from './MessageBubble';
+import { Send, Smile, Info, X, Zap, Loader2, Flag, Sparkles, Clock, Globe, ShieldCheck, RefreshCw, Trophy, UserCircle, Image, Lock, Palette } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { generateIcebreaker } from '@/lib/groq';
 import Toast from './Toast';
-import { findMatch, updatePing } from '@/lib/matching';
+import { updatePing } from '@/lib/matching';
 import { detectIdentity, UserIdentity } from '@/lib/identity';
 import ChatKarmaOverlay from './ChatKarmaOverlay';
 import Link from 'next/link';
+import { rtdb } from '@/lib/firebaseClient';
+import { ref, onValue, push, set, update, off, remove, get } from 'firebase/database';
 
 interface Message {
   id: string;
-  room_id: string;
   sender_id: string;
   content: string;
-  created_at: string;
+  created_at: number;
 }
 
 interface ChatUIProps {
@@ -35,8 +34,14 @@ type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
 
 const COMMON_EMOJIS = ["😊", "😂", "🥰", "😎", "🤔", "🙌", "✨", "🔥", "❤️", "👍", "👋", "🎉", "🤣", "🥺", "💀", "👀", "💯", "😭"];
 
-export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, mode, variant = 'full' }: ChatUIProps) {
-  const [roomId, setRoomId] = useState(initialRoomId);
+const THEMES = [
+  { id: 'gold', name: 'Neon Gold 💛', class: 'bg-yellow-400 text-black', text: 'text-yellow-400' },
+  { id: 'purple', name: 'Cosmic Purple 💜', class: 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white', text: 'text-violet-400' },
+  { id: 'blue', name: 'Arctic Blue 💙', class: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white', text: 'text-cyan-400' },
+  { id: 'rose', name: 'Sunset Rose 💖', class: 'bg-gradient-to-r from-rose-500 to-orange-500 text-white', text: 'text-rose-400' }
+];
+
+export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant = 'full' }: ChatUIProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [lastMessageSent, setLastMessageSent] = useState(0);
@@ -44,9 +49,24 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   const [isGeneratingIcebreaker, setIsGeneratingIcebreaker] = useState(false);
   const [status, setStatus] = useState<ConnectionStatus>('connected');
   const [secondsConnected, setSecondsConnected] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState('gold');
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error' | 'info'} | null>(null);
+  
+  // Q&A / Debate matching context
+  const [matchQuestion, setMatchQuestion] = useState<string | null>(null);
+  const [myAnswer, setMyAnswer] = useState<string | null>(null);
+  const [partnerAnswer, setPartnerAnswer] = useState<string | null>(null);
+  const [debateTopic, setDebateTopic] = useState<string | null>(null);
+  const [myStance, setMyStance] = useState<string | null>(null);
+  const [partnerStance, setPartnerStance] = useState<string | null>(null);
+
+  // Gamification states
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [activeEffect, setActiveEffect] = useState<'confetti' | 'sparks' | null>(null);
+  
   const [myIdentity, setMyIdentity] = useState<UserIdentity | null>(null);
   const [partnerIdentity, setPartnerIdentity] = useState<UserIdentity | null>(null);
   const [showKarma, setShowKarma] = useState(false);
@@ -55,13 +75,40 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const disconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate Level and Progress
+  useEffect(() => {
+    // Load persisted XP
+    const savedXp = Number(localStorage.getItem('chatjeen_xp') || '0');
+    setXp(savedXp);
+  }, []);
+
+  useEffect(() => {
+    // Level brackets: Lvl 1 (0 XP), Lvl 2 (100 XP), Lvl 3 (250 XP), Lvl 4 (500 XP), Lvl 5 (1000 XP)
+    let currentLvl = 1;
+    if (xp >= 1000) currentLvl = 5;
+    else if (xp >= 500) currentLvl = 4;
+    else if (xp >= 250) currentLvl = 3;
+    else if (xp >= 100) currentLvl = 2;
+    
+    if (currentLvl !== level && level > 1) {
+      setToast({ message: `🎉 LEVEL UP! You reached Level ${currentLvl}!`, type: 'success' });
+    }
+    setLevel(currentLvl);
+    localStorage.setItem('chatjeen_xp', String(xp));
+  }, [xp, level]);
+
+  const addXp = (amount: number) => {
+    setXp(prev => prev + amount);
+  };
 
   // --- IMAGE UPLOAD LOGIC ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (level < 3) {
+      setToast({ message: 'Lock: Unlock image sharing at Level 3 by chatting!', type: 'info' });
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -75,7 +122,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
         const base64Str = event.target?.result as string;
         
         // Resize image to prevent massive base64 payloads
-        const img = new globalThis.Image();
+        const img = new window.Image();
         img.onload = async () => {
             const canvas = document.createElement('canvas');
             let width = img.width;
@@ -102,18 +149,18 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
             
             const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
 
-            // Send via database
-            const { error } = await supabase
-              .from('messages')
-              .insert({
-                room_id: roomId,
-                sender_id: myId,
-                content: `[IMAGE]${resizedBase64}`
-              });
+            // Send via Firebase
+            const messagesRef = ref(rtdb, `rooms/${roomId}/messages`);
+            const newMsgRef = push(messagesRef);
+            await set(newMsgRef, {
+              id: newMsgRef.key,
+              sender_id: myId,
+              content: `[IMAGE]${resizedBase64}`,
+              created_at: Date.now()
+            });
 
-            if (error) console.error('Error sending image:', error);
-            
-            // Reset input
+            addXp(15); // Bonus XP for sharing photos
+
             if (fileInputRef.current) fileInputRef.current.value = '';
         };
         img.src = base64Str;
@@ -121,38 +168,38 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
     reader.readAsDataURL(file);
   };
 
-  // --- TIMER LOGIC ---
+  // --- TIMER & PASSIVE XP LOGIC ---
   useEffect(() => {
+    let timerInterval: NodeJS.Timeout;
     if (status === 'connected') {
-      timerIntervalRef.current = setInterval(() => {
+      timerInterval = setInterval(() => {
         setSecondsConnected(prev => {
           const next = prev + 1;
-          if (next === 300) { // 5 minutes
-            setShowCelebration(true);
-            setTimeout(() => setShowCelebration(false), 5000);
+          // Give 5 XP every 15 seconds
+          if (next % 15 === 0) {
+            addXp(5);
           }
           return next;
         });
       }, 1000);
-    } else {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     }
-    return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    };
+    return () => clearInterval(timerInterval);
   }, [status]);
   
-  // --- HEARTBEAT LOGIC ---
+  // --- HEARTBEAT & ACTIVE PRESENCE LOGIC ---
   useEffect(() => {
+    let heartbeatInterval: NodeJS.Timeout;
     if (status === 'connected' && myId) {
-        heartbeatIntervalRef.current = setInterval(() => {
-            updatePing(myId);
-        }, 10000);
+      // Mark active at room creation
+      set(ref(rtdb, `rooms/${roomId}/active/${myId}`), Date.now());
+
+      heartbeatInterval = setInterval(() => {
+        updatePing(myId);
+        set(ref(rtdb, `rooms/${roomId}/active/${myId}`), Date.now());
+      }, 5000);
     }
-    return () => {
-        if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-    };
-  }, [status, myId]);
+    return () => clearInterval(heartbeatInterval);
+  }, [status, myId, roomId]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -164,41 +211,49 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
     
-    // Broadcast typing status
-    supabase.channel(`chat_room:${roomId}`).send({
-      type: 'broadcast',
-      event: 'typing',
-      payload: { userId: myId, isTyping: true }
-    });
+    // Broadcast typing status via Firebase RTDB
+    set(ref(rtdb, `rooms/${roomId}/typing/${myId}`), true);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
-      supabase.channel(`chat_room:${roomId}`).send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: { userId: myId, isTyping: false }
-      });
+      set(ref(rtdb, `rooms/${roomId}/typing/${myId}`), false);
     }, 2000);
   };
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- SYNC SKIP LOGIC ---
   const handleSkip = async () => {
-    // Show karma if session was meaningful and not already showing
     if (!showKarma && partnerId && (secondsConnected > 15 || messages.length > 5)) {
         setShowKarma(true);
-        return; // Wait for user to rate or close
+        return; 
     }
 
-    // Inform partner
-    supabase.channel(`chat_room:${roomId}`).send({
-      type: 'broadcast',
-      event: 'partner_skipped',
-      payload: { senderId: myId }
-    });
+    // Write skip action
+    await set(ref(rtdb, `rooms/${roomId}/actions/${myId}/skip`), true);
     
-    // Redirect back to the dedicated matchmaker page, which handles inserting into 
-    // the queue, heartbeat pings, and loading states automatically!
+    // Cleanup room
+    remove(ref(rtdb, `rooms/${roomId}`));
     window.location.href = `/matching?mode=${mode}`;
+  };
+
+  // --- TRIGGER FULLSCREEN SCREEN EFFECTS ---
+  const triggerScreenEffect = async (effect: 'confetti' | 'sparks') => {
+    if (level < 5) {
+      setToast({ message: 'Effects are unlocked at Level 5!', type: 'info' });
+      return;
+    }
+    // Set locally and sync to Firebase for partner
+    await set(ref(rtdb, `rooms/${roomId}/actions/${myId}/effect`), {
+      type: effect,
+      timestamp: Date.now()
+    });
+    // Trigger locally
+    playScreenEffect(effect);
+  };
+
+  const playScreenEffect = (effect: 'confetti' | 'sparks') => {
+    setActiveEffect(effect);
+    setTimeout(() => setActiveEffect(null), 3000);
   };
 
   // --- EMOJI PICKER LOGIC ---
@@ -208,143 +263,121 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
     inputRef.current?.focus();
   };
 
-  const channelRef = useRef<any>(null);
-
   // --- MAIN SUBSCRIPTION LOGIC ---
   useEffect(() => {
-    const fetchRoomAndMessages = async () => {
-      // ... same logic
-      const { data: msgData } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-      if (msgData) setMessages(msgData);
+    let unsubscribeMessages: () => void;
+    let unsubscribeActive: () => void;
+    let unsubscribeTyping: () => void;
+    let unsubscribeActions: () => void;
 
-      const { data: roomData } = await supabase
-        .from('rooms')
-        .select('user1, user2')
-        .eq('id', roomId)
-        .single();
-      
-      if (roomData) {
-        const id = roomData.user1 === myId ? roomData.user2 : roomData.user1;
-        setPartnerId(id);
+    const setupRoom = async (retries = 3) => {
+      const roomRef = ref(rtdb, `rooms/${roomId}`);
+      const snap = await get(roomRef);
+      if (!snap.exists()) {
+        if (retries > 0) {
+          setTimeout(() => setupRoom(retries - 1), 500);
+          return;
+        }
+        setStatus('disconnected');
+        return;
       }
-    };
 
-    fetchRoomAndMessages();
+      const roomData = snap.val();
+      const pId = roomData.user1 === myId ? roomData.user2 : roomData.user1;
+      setPartnerId(pId);
 
-    // 15 SECOND FALLBACK TIMEOUT FOR GHOST CONNECTIONS
-    let ghostTimeout: NodeJS.Timeout | null = null;
-    if (status === 'connected' && !partnerIdentity) {
-        ghostTimeout = setTimeout(() => {
-            console.log('Ghost connection timeout reached. Partner never fully joined. Skipping...');
-            setToast({ message: "Partner failed to connect. Finding someone else...", type: 'info' });
-            handleSkip(); // Find a new match automatically
-        }, 15000);
-    }
+      // Load matching contexts
+      if (roomData.vibe === 'Debate' && roomData.debate) {
+        setDebateTopic(roomData.debate.topic);
+        setMyStance(roomData.debate.stances[myId]);
+        setPartnerStance(roomData.debate.stances[pId]);
+      } else if (roomData.answers) {
+        const myAns = roomData.answers[myId];
+        const partnerAns = roomData.answers[pId];
+        if (myAns) {
+          setMatchQuestion(myAns.question);
+          setMyAnswer(myAns.answer);
+        }
+        if (partnerAns) {
+          setPartnerAnswer(partnerAns.answer);
+        }
+      }
 
-    const channel = supabase.channel(`chat_room:${roomId}`, {
-        config: {
-            presence: { key: myId }
-        }
-    });
+      // Load initial partner identity
+      const partnerIdent = await detectIdentity(pId);
+      setPartnerIdentity(partnerIdent);
 
-    channelRef.current = channel;
-
-    channel
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `room_id=eq.${roomId}`
-      }, (payload) => {
-        setMessages((prev) => [...prev, payload.new as Message]);
-      })
-      .on('broadcast', { event: 'typing' }, (payload) => {
-        if (payload.payload.userId !== myId) {
-          setIsOtherTyping(payload.payload.isTyping);
-        }
-      })
-      .on('broadcast', { event: 'partner_skipped' }, (payload) => {
-          if (payload.payload.senderId !== myId) {
-              if (ghostTimeout) clearTimeout(ghostTimeout);
-              setStatus('disconnected');
-              setPartnerIdentity(null);
-              if (secondsConnected > 15 || messages.length > 5) {
-                setShowKarma(true);
-              }
-          }
-      })
-      .on('broadcast', { event: 'identity_sync' }, (payload) => {
-        if (payload.payload.userId !== myId) {
-            console.log('Received partner identity:', payload.payload.identity);
-            if (ghostTimeout) clearTimeout(ghostTimeout); // Clear ghost timeout when identity is received
-            setPartnerIdentity(payload.payload.identity);
-        }
-      })
-      .on('broadcast', { event: 'request_identity' }, (payload) => {
-        if (payload.payload.userId !== myId && myIdentity) {
-            channel.send({
-                type: 'broadcast',
-                event: 'identity_sync',
-                payload: { userId: myId, identity: myIdentity }
-            });
-        }
-      })
-      .on('presence', { event: 'join' }, ({ key }) => {
-        if (key !== myId) {
-            console.log('Partner re-joined presence', key);
-            if (disconnectTimeoutRef.current) {
-                clearTimeout(disconnectTimeoutRef.current);
-                disconnectTimeoutRef.current = null;
-            }
-        }
-      })
-      .on('presence', { event: 'leave' }, ({ key }) => {
-        // If the other person leaves presence (e.g. closes tab, drops connection)
-        if (key !== myId) {
-            console.log('Partner left presence via channel drop', key);
-            if (ghostTimeout) clearTimeout(ghostTimeout);
-            
-            // Add a grace period of 5 seconds before disconnecting
-            if (disconnectTimeoutRef.current) clearTimeout(disconnectTimeoutRef.current);
-            disconnectTimeoutRef.current = setTimeout(() => {
-                console.log('Grace period expired. Disconnecting.');
-                setStatus('disconnected');
-                if (secondsConnected > 15 || messages.length > 5) {
-                    setShowKarma(true);
-                }
-            }, 5000);
-        }
-      })
-      .subscribe(async (subStatus) => {
-        if (subStatus === 'SUBSCRIBED') {
-            await channel.track({ online: true });
-            // Signal presence and request identity from partner
-            channel.send({
-                type: 'broadcast',
-                event: 'request_identity',
-                payload: { userId: myId }
-            });
-            // Also send ours just in case
-            if (myIdentity) {
-                channel.send({
-                    type: 'broadcast',
-                    event: 'identity_sync',
-                    payload: { userId: myId, identity: myIdentity }
-                });
-            }
+      // Subscribe to messages
+      const msgsRef = ref(rtdb, `rooms/${roomId}/messages`);
+      unsubscribeMessages = onValue(msgsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          const sorted = Object.values(val).sort((a: any, b: any) => a.created_at - b.created_at) as Message[];
+          setMessages(sorted);
+        } else {
+          setMessages([]);
         }
       });
 
-    return () => {
-        if (ghostTimeout) clearTimeout(ghostTimeout);
-        supabase.removeChannel(channel);
-        channelRef.current = null;
+      // Subscribe to typing indicators
+      const typingRef = ref(rtdb, `rooms/${roomId}/typing/${pId}`);
+      unsubscribeTyping = onValue(typingRef, (snapshot) => {
+        if (snapshot.exists()) {
+          setIsOtherTyping(snapshot.val() === true);
+        } else {
+          setIsOtherTyping(false);
+        }
+      });
+
+      // Subscribe to active/heartbeat indicator to detect partner disconnects
+      const partnerActiveRef = ref(rtdb, `rooms/${roomId}/active/${pId}`);
+      unsubscribeActive = onValue(partnerActiveRef, (snapshot) => {
+        if (snapshot.exists()) {
+          // Reset disconnect timer on activity
+          resetDisconnectTimer();
+        }
+      });
+
+      // Subscribe to actions (skips, screen effects)
+      const actionsRef = ref(rtdb, `rooms/${roomId}/actions/${pId}`);
+      unsubscribeActions = onValue(actionsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          if (data.skip === true) {
+            setStatus('disconnected');
+            if (secondsConnected > 15 || messages.length > 5) {
+              setShowKarma(true);
+            }
+          }
+          if (data.effect && Date.now() - data.effect.timestamp < 3000) {
+            playScreenEffect(data.effect.type);
+          }
+        }
+      });
     };
-  }, [roomId, myId, myIdentity]);
+
+    setupRoom();
+
+    let disconnectTimer: NodeJS.Timeout;
+    const resetDisconnectTimer = () => {
+      if (disconnectTimer) clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(() => {
+        console.log("Partner inactive for 15s. Disconnecting.");
+        setStatus('disconnected');
+        if (secondsConnected > 15 || messages.length > 5) {
+          setShowKarma(true);
+        }
+      }, 15000);
+    };
+
+    return () => {
+      if (unsubscribeMessages) unsubscribeMessages();
+      if (unsubscribeTyping) unsubscribeTyping();
+      if (unsubscribeActive) unsubscribeActive();
+      if (unsubscribeActions) unsubscribeActions();
+      if (disconnectTimer) clearTimeout(disconnectTimer);
+    };
+  }, [roomId, myId]);
 
   // --- IDENTITY DETECTION ---
   useEffect(() => {
@@ -354,32 +387,6 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
     }
     initIdentity();
   }, [myId]);
-
-  // Broadcast our identity with heartbeats to ensure delivery
-  useEffect(() => {
-    if (myIdentity && status === 'connected' && channelRef.current) {
-        const send = () => {
-            if (channelRef.current) {
-                channelRef.current.send({
-                    type: 'broadcast',
-                    event: 'identity_sync',
-                    payload: { userId: myId, identity: myIdentity }
-                });
-            }
-        };
-
-        send(); // Send immediately
-        
-        // Heartbeat for reliability at start of match
-        const heartbeat = setInterval(send, 3000);
-        const timeout = setTimeout(() => clearInterval(heartbeat), 15000);
-
-        return () => {
-            clearInterval(heartbeat);
-            clearTimeout(timeout);
-        };
-    }
-  }, [myIdentity, status, roomId]); // Added roomId to reset heartbeat on switch
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -403,37 +410,142 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
 
     setLastMessageSent(now);
     
-    // Basic obscenity filter (client-side mitigation)
-    const badWords = ['fuck', 'shit', 'bitch', 'asshole', 'nigger', 'faggot'];
+    // NSFW Censorship & Contact sharing block filters
     let content = inputText;
+    
+    // Bad word list
+    const badWords = ['fuck', 'shit', 'bitch', 'asshole', 'nigger', 'faggot', 'horny', 'sex', 'sexting', 'nude'];
     badWords.forEach(word => {
         const regex = new RegExp(`\\b${word}\\b`, 'gi');
         content = content.replace(regex, '***');
     });
 
+    // Contact details filter for Level < 3
+    if (level < 3) {
+      const contactPattern = /\b(snapchat|snap|insta|instagram|kik|telegram|whatsapp|phone|number|snap\?|insta\?)\b/gi;
+      const handlePattern = /@\w+/g;
+      
+      if (contactPattern.test(inputText) || handlePattern.test(inputText)) {
+        setToast({ 
+          message: "🔒 Contact sharing is locked until Level 3 to prevent immediate spam/sexting!", 
+          type: 'error' 
+        });
+        return;
+      }
+    }
+
     setInputText('');
     
-    supabase.channel(`chat_room:${roomId}`).send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: { userId: myId, isTyping: false }
+    // Sync typing to false
+    set(ref(rtdb, `rooms/${roomId}/typing/${myId}`), false);
+
+    const messagesRef = ref(rtdb, `rooms/${roomId}/messages`);
+    const newMsgRef = push(messagesRef);
+    await set(newMsgRef, {
+      id: newMsgRef.key,
+      sender_id: myId,
+      content: content,
+      created_at: Date.now()
     });
 
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        room_id: roomId,
-        sender_id: myId,
-        content: content
+    addXp(10); // Reward 10 XP for sending messages
+  };
+
+  const handleAiIcebreaker = async () => {
+    if (level < 3) {
+      setToast({ message: 'Unlock AI Icebreaker at Level 3!', type: 'info' });
+      return;
+    }
+    setIsGeneratingIcebreaker(true);
+    await generateIcebreaker(roomId);
+    setIsGeneratingIcebreaker(false);
+  };
+
+  const handleReport = async () => {
+    if (!partnerId) return;
+    try {
+      // Write report to Firebase
+      const reportsRef = ref(rtdb, `reports/${partnerId}`);
+      const newReportRef = push(reportsRef);
+      await set(newReportRef, {
+        id: newReportRef.key,
+        roomId,
+        reason: 'User reported in chat session',
+        timestamp: Date.now()
       });
 
-    if (error) console.error('Error sending message:', error);
+      // Fetch reports count to potentially shadowban
+      const countSnap = await get(ref(rtdb, `reports_count/${partnerId}`));
+      const newCount = (countSnap.val() || 0) + 1;
+      await set(ref(rtdb, `reports_count/${partnerId}`), newCount);
+
+      if (newCount >= 3) {
+        await set(ref(rtdb, `shadowbans/${partnerId}`), true);
+      }
+
+      setToast({ message: 'User reported successfully.', type: 'success' });
+      handleSkip();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
-    <div className="flex flex-col w-full relative transition-all duration-300 h-screen h-[100dvh] max-w-4xl mx-auto my-0 bg-black overflow-hidden">
+    <div className="flex flex-col w-full relative transition-all duration-300 h-screen h-[100dvh] max-w-4xl mx-auto my-0 bg-black overflow-hidden select-none">
       
-      {/* NEW HEADER: STICKY & MINIMAL */}
+      {/* SCREEN EFFECTS OVERLAY */}
+      <AnimatePresence>
+        {activeEffect === 'confetti' && (
+          <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden bg-black/10">
+            {Array.from({ length: 45 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ 
+                  y: -50, 
+                  x: Math.random() * window.innerWidth, 
+                  rotate: 0,
+                  scale: Math.random() * 0.6 + 0.6
+                }}
+                animate={{ 
+                  y: window.innerHeight + 50,
+                  x: `calc(${Math.random() * 100}% + ${Math.random() * 200 - 100}px)`,
+                  rotate: 720
+                }}
+                transition={{ duration: Math.random() * 1.5 + 1.5, ease: 'linear' }}
+                className={cn(
+                  "absolute w-4 h-4 rounded-sm",
+                  ['bg-red-500', 'bg-yellow-400', 'bg-blue-500', 'bg-green-500', 'bg-pink-500'][Math.floor(Math.random() * 5)]
+                )}
+              />
+            ))}
+          </div>
+        )}
+        {activeEffect === 'sparks' && (
+          <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden bg-yellow-400/5">
+            {Array.from({ length: 30 }).map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ 
+                  y: window.innerHeight / 2 + Math.random() * 100 - 50, 
+                  x: window.innerWidth / 2 + Math.random() * 100 - 50, 
+                  scale: 0.1,
+                  opacity: 1
+                }}
+                animate={{ 
+                  y: Math.random() * window.innerHeight,
+                  x: Math.random() * window.innerWidth,
+                  scale: Math.random() * 2 + 1,
+                  opacity: 0
+                }}
+                transition={{ duration: 1.2, ease: 'easeOut' }}
+                className="absolute w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_10px_rgba(250,204,21,0.8)]"
+              />
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* HEADER: LOGO & STATUS */}
       <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10 px-4 h-14 flex items-center justify-center shrink-0">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
               <h1 className="text-base font-black italic tracking-tighter uppercase text-white">Chat<span className="text-yellow-400 not-italic">Jeen</span></h1>
@@ -441,30 +553,30 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
           </Link>
       </header>
 
-      <div className="flex-1 flex flex-col bg-black border-none overflow-hidden relative">
-        <AnimatePresence>
-            {showCelebration && (
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
-                    className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
-                >
-                    <div className="bg-primary text-primary-foreground px-8 py-4 rounded-full shadow-2xl flex items-center gap-3">
-                        <Trophy className="w-6 h-6" />
-                        <span className="font-bold text-lg">5 Minute Milestone Reached! 🎉</span>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+      {/* GAMIFICATION LEVEL BAR */}
+      <div className="bg-[#111] border-b border-white/5 px-4 py-2 flex items-center justify-between gap-4 select-none">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-yellow-400" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/40">LEVEL {level}</span>
+          <span className="text-[10px] text-yellow-400 font-bold">({xp} XP)</span>
+        </div>
+        <div className="flex-1 max-w-xs h-1.5 bg-white/5 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-yellow-400 transition-all duration-500 rounded-full" 
+            style={{ width: `${Math.min(100, (xp / (level * 250)) * 100)}%` }}
+          />
+        </div>
+        <span className="text-[9px] text-white/40 font-semibold">Unlock bubs at Level 2!</span>
+      </div>
 
-        {/* MATCH PROFILE CARD: SLEEK & INTEGRATED */}
+      <div className="flex-1 flex flex-col bg-black border-none overflow-hidden relative">
+        
+        {/* MATCH DETAILS OR CONTEXT CARD */}
         {variant === 'full' && status === 'connected' && (
-          <div className="mx-4 mt-6 mb-2">
+          <div className="mx-4 mt-4 flex flex-col gap-2">
+            {/* User details */}
             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col gap-3 shadow-2xl relative overflow-hidden">
-                {/* Subtle background glow */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 blur-3xl rounded-full translate-x-10 -translate-y-10" />
-                
                 <div className="flex items-center gap-4 relative z-10">
                     <div className="w-12 h-12 rounded-full bg-[#1A1A1A] border border-white/10 flex items-center justify-center text-white/40 shrink-0">
                         <UserCircle className="w-8 h-8" />
@@ -472,7 +584,12 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                     <div className="flex flex-col flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-xl leading-none">{partnerIdentity?.flag || '🌐'}</span>
-                            <h2 className="font-bold text-base text-white truncate">{partnerIdentity?.name || 'Anonymous'}</h2>
+                            <h2 className="font-bold text-base text-white truncate">
+                              {partnerIdentity?.name || 'Anonymous'}
+                              {level >= 4 && partnerIdentity?.title && (
+                                <span className="ml-2 text-[9px] text-yellow-400 border border-yellow-400/30 rounded-full px-1.5 py-0.5 uppercase font-black tracking-widest">{partnerIdentity.title}</span>
+                              )}
+                            </h2>
                         </div>
                         <div className="flex items-center gap-3 w-full">
                             <div className="flex items-center gap-1.5">
@@ -491,9 +608,31 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                     </div>
                 </div>
             </div>
+
+            {/* Q&A / Debate context card */}
+            {debateTopic ? (
+              <div className="bg-[#FF4B4B]/10 border border-[#FF4B4B]/20 rounded-xl p-3 flex flex-col gap-1.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-[#FF4B4B]">Debate Mode</span>
+                <p className="text-xs font-bold text-white leading-relaxed">Topic: {debateTopic}</p>
+                <div className="flex items-center justify-between text-[10px] text-white/60 font-semibold border-t border-white/5 pt-1.5">
+                  <span>You: <strong className="text-white">{myStance}</strong></span>
+                  <span>Partner: <strong className="text-white">{partnerStance}</strong></span>
+                </div>
+              </div>
+            ) : matchQuestion && (
+              <div className="bg-yellow-400/5 border border-yellow-400/10 rounded-xl p-3 flex flex-col gap-1.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400">Answer Revealed</span>
+                <p className="text-xs font-semibold text-white/80">Question: "{matchQuestion}"</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[10px] text-white/50 font-semibold border-t border-white/5 pt-1.5 gap-1.5">
+                  <span>You answered: <strong className="text-yellow-400">"{myAnswer}"</strong></span>
+                  <span>Partner answered: <strong className="text-yellow-400">"{partnerAnswer || 'Waiting...'}"</strong></span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
+        {/* CHAT BUBBLE STREAM */}
         <div 
             ref={scrollRef}
             className={cn(
@@ -501,32 +640,8 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                 variant === 'minimal' ? "p-4" : "px-4 py-4"
             )}
         >
-            {status === 'connecting' ? (
-                <div className="flex flex-col items-center justify-center h-full gap-6 text-center animate-in fade-in duration-500">
-                    <div className="relative">
-                        <div className="w-20 h-20 rounded-full bg-[#FF4B4B]/10 flex items-center justify-center">
-                            <motion.div 
-                                animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.2, 0.5] }}
-                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                                className="absolute inset-0 rounded-full bg-[#FF4B4B]/20"
-                            />
-                            <div className="w-4 h-4 rounded-full bg-[#FF4B4B] shadow-[0_0_15px_rgba(255,75,75,0.6)]" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <h3 className="text-xl font-bold text-white tracking-tight">Pairing...</h3>
-                        <p className="text-xs text-white/30 font-medium">Pairing time: about 1 minute</p>
-                    </div>
-                    <button 
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-6 py-2.5 rounded-full border border-white/10 text-xs font-bold text-white/50 hover:bg-white/5 transition-all"
-                    >
-                        Cancel Pairing
-                    </button>
-                </div>
-            ) : status === 'disconnected' ? (
+            {status === 'disconnected' ? (
                 <div className="flex flex-col items-center justify-start h-full pt-10 px-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    {/* DISCONNECTED STATUS BOX */}
                     <div className="w-full bg-[#111111] border border-white/5 rounded-2xl p-6 flex flex-col gap-4 text-left">
                          <div className="flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-[#FF4B4B]" />
@@ -534,21 +649,15 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                          </div>
                          
                          <div className="flex items-center gap-6 mt-2 ml-5">
-                            <button className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Report abuse</button>
+                            <button onClick={handleReport} className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Report abuse</button>
                             <button className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Feedback</button>
                          </div>
                     </div>
-
                     <div className="flex-1" />
-                    
-                    {/* RESTART BUTTON AT THE BOTTOM */}
                     <div className="w-full pb-10 flex flex-col items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white/20">
-                            <Menu className="w-4 h-4 rotate-90" />
-                        </div>
                         <button 
                             onClick={handleSkip}
-                            className="w-full bg-[#FF4B4B] text-white font-black text-lg py-5 rounded-[1.5rem] shadow-[0_15px_30px_rgba(255,75,75,0.2)] active:scale-95 transition-all uppercase tracking-widest"
+                            className="w-full bg-[#FF4B4B] text-white font-black text-lg py-5 rounded-[1.5rem] shadow-[0_15px_30px_rgba(250,204,21,0.15)] active:scale-95 transition-all uppercase tracking-widest"
                         >
                             Restart
                         </button>
@@ -558,11 +667,32 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                 <>
                     <AnimatePresence initial={false}>
                         {messages.map((msg) => (
-                        <MessageBubble 
-                            key={msg.id} 
-                            message={msg} 
-                            isMe={msg.sender_id === myId} 
-                        />
+                          <div 
+                            key={msg.id}
+                            className={cn(
+                              "flex w-full mb-3",
+                              msg.sender_id === myId ? "justify-end" : "justify-start"
+                            )}
+                          >
+                            <div 
+                              className={cn(
+                                "max-w-[70%] px-4 py-3 rounded-[1.25rem] text-sm font-semibold select-text",
+                                msg.sender_id === myId 
+                                  ? cn(THEMES.find(t => t.id === selectedTheme)?.class, "rounded-tr-[0.25rem]") 
+                                  : "bg-[#1A1A1A] text-white/90 border border-white/5 rounded-tl-[0.25rem]"
+                              )}
+                            >
+                              {msg.content.startsWith('[IMAGE]') ? (
+                                <img 
+                                  src={msg.content.replace('[IMAGE]', '')} 
+                                  alt="Shared photo" 
+                                  className="rounded-lg max-h-[250px] object-cover pointer-events-auto"
+                                />
+                              ) : (
+                                <span>{msg.content}</span>
+                              )}
+                            </div>
+                          </div>
                         ))}
                     </AnimatePresence>
                     
@@ -586,9 +716,89 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
             )}
         </div>
 
-        {/* NEW FOOTER AREA: MATCHING REFERENCE */}
+        {/* INPUT PANEL */}
         {status === 'connected' && (
-            <div className="p-4 sm:p-6 bg-black/40 backdrop-blur-xl border-t border-white/10 pb-8">
+            <div className="p-4 sm:p-6 bg-black/40 backdrop-blur-xl border-t border-white/10 pb-8 flex flex-col gap-3">
+                
+                {/* TOOLBAR: ICEBREAKERS & THEMES */}
+                <div className="flex items-center gap-2 select-none">
+                  {/* AI Icebreaker button */}
+                  <button
+                    disabled={level < 3 || isGeneratingIcebreaker}
+                    onClick={handleAiIcebreaker}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-1.5",
+                      level >= 3 
+                        ? "bg-yellow-400/10 border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20" 
+                        : "bg-white/5 border-white/10 text-white/20 cursor-not-allowed"
+                    )}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {isGeneratingIcebreaker ? 'Generating...' : level >= 3 ? 'AI Icebreaker' : 'AI Icebreaker (Lvl 3)'}
+                  </button>
+
+                  {/* Theme Selector */}
+                  {level >= 2 ? (
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowThemePicker(!showThemePicker)}
+                        className="p-1.5 rounded-full border bg-white/5 border-white/10 text-white/60 hover:bg-white/10 transition-colors"
+                        title="Theme Bubble Gradient"
+                      >
+                        <Palette className="w-3.5 h-3.5" />
+                      </button>
+                      <AnimatePresence>
+                        {showThemePicker && (
+                          <motion.div 
+                            initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                            className="absolute bottom-full left-0 mb-2 bg-[#111] border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col gap-2 z-50"
+                          >
+                            {THEMES.map(theme => (
+                              <button
+                                key={theme.id}
+                                onClick={() => {
+                                  setSelectedTheme(theme.id);
+                                  setShowThemePicker(false);
+                                }}
+                                className={cn(
+                                  "px-3 py-1.5 rounded-xl text-left text-xs font-bold transition-all",
+                                  theme.class,
+                                  selectedTheme === theme.id && "ring-2 ring-white"
+                                )}
+                              >
+                                {theme.name}
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <span className="text-[9px] text-white/20 font-bold uppercase tracking-wider">Themes unlock at Level 2</span>
+                  )}
+
+                  {/* Screen Effects Panel */}
+                  {level >= 5 && (
+                    <div className="flex gap-1.5 ml-auto">
+                      <button 
+                        onClick={() => triggerScreenEffect('confetti')}
+                        className="px-2.5 py-1 rounded-full border bg-white/5 border-white/10 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                      >
+                        🎉 Confetti
+                      </button>
+                      <button 
+                        onClick={() => triggerScreenEffect('sparks')}
+                        className="px-2.5 py-1 rounded-full border bg-white/5 border-white/10 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                      >
+                        ✨ Sparks
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* TEXT INPUT ROW */}
                 <div className="flex items-center gap-3">
                     {/* LEAVE BUTTON */}
                     <button 
@@ -608,10 +818,10 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                         </button>
                         
                         <input
-                            ref={inputRef as any}
+                            ref={inputRef}
                             type="text"
                             value={inputText}
-                            onChange={(e) => handleInputChange(e as any)}
+                            onChange={handleInputChange}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     handleSend();
@@ -635,6 +845,7 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                             </div>
                         )}
 
+                        {/* Lock Overlay on Image share */}
                         <input 
                             type="file" 
                             accept="image/*" 
@@ -643,10 +854,10 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                             className="hidden" 
                         />
                         <button 
-                            className="absolute right-4 z-10 text-white/20 hover:text-white/40 transition-colors"
-                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute right-4 z-10 text-white/20 hover:text-white/40 transition-colors flex items-center"
+                            onClick={() => level >= 3 ? fileInputRef.current?.click() : setToast({ message: 'Unlock image sharing at Level 3!', type: 'info' })}
                         >
-                            <Image className="w-5 h-5" />
+                            {level >= 3 ? <Image className="w-5 h-5" /> : <Lock className="w-4 h-4 text-white/10" />}
                         </button>
                     </div>
 
@@ -656,7 +867,9 @@ export default function ChatUI({ roomId: initialRoomId, myId, onSkip, onReport, 
                         disabled={!inputText.trim()}
                         className={cn(
                             "w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-30",
-                            inputText.trim() ? "bg-[#FACC15] text-black shadow-[0_0_15px_rgba(250,204,21,0.3)]" : "bg-[#1A1A1A] text-white/40"
+                            inputText.trim() 
+                              ? cn(THEMES.find(t => t.id === selectedTheme)?.class, "shadow-[0_0_15px_rgba(250,204,21,0.15)]") 
+                              : "bg-[#1A1A1A] text-white/40"
                         )}
                     >
                         <Send className="w-5 h-5 translate-x-0.5 -translate-y-0.5 rotate-45" />

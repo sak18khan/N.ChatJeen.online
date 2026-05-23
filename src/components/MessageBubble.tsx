@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 
 interface Message {
   id: string;
-  room_id: string;
+  room_id?: string;
+  social_room_id?: string;
   sender_id: string;
   content: string;
   created_at: string;

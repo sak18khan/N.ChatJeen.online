@@ -5,17 +5,26 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Zap, ShieldCheck, Laptop, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase } from '@/lib/supabaseClient';
+import { rtdb } from '@/lib/firebaseClient';
+import { ref, onValue, off, remove } from 'firebase/database';
 import { findMatch, ChatMode, updatePing } from '@/lib/matching';
 import { Button } from '@/components/ui/button';
 
 function MatchingContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    
+    // Extracted query parameters
     const mode = (searchParams.get('mode') as ChatMode) || 'text';
-    const vibe = mode; // We use vibe to store the mode so they don't mix up
-    const layout = 'text-only';
-    const selection = 'none';
+    const vibe = searchParams.get('vibe') || 'Any';
+    
+    // Q&A Match parameters
+    const questionText = searchParams.get('q') || '';
+    const answerText = searchParams.get('a') || '';
+    
+    // Debate Mode parameters
+    const debateTopic = searchParams.get('topic') || '';
+    const debateStance = (searchParams.get('stance') as 'Pro' | 'Con' | 'Random') || 'Random';
     
     const [userId, setUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -46,7 +55,7 @@ function MatchingContent() {
         setUserId(myId);
         
         let pingInterval: NodeJS.Timeout;
-        let matchChannel: any;
+        let myQueueRef: any;
 
         const startMatching = async () => {
             setStatus('searching');
@@ -62,60 +71,42 @@ function MatchingContent() {
             }
             localStorage.setItem('chatjeen_last_match_time', Date.now().toString());
 
-            // 1. Insert into waitlist
-            const { error: insertError } = await supabase
-                .from('users_temp')
-                .insert({ id: myId, status: 'waiting', vibe: mode });
+            try {
+                // Prepare answers or debate configurations
+                const answers = questionText && answerText ? { question: questionText, answer: answerText } : null;
+                const debate = vibe === 'Debate' ? { topic: debateTopic, stance: debateStance } : null;
 
-            if (insertError) {
-                console.error('Waitlist Error Details:', insertError);
-                // Fail gracefully so we don't spam errors
-                setError('Matching system busy. Please try again soon.');
-                return;
-            }
+                // Start heartbeat ping
+                pingInterval = setInterval(() => updatePing(myId), 10000);
 
-            // Start heartbeat ping
-            pingInterval = setInterval(() => updatePing(myId), 10000);
-
-            // 2. Try immediate match
-            const room = await findMatch(myId, mode);
-            
-            if (room) {
-                clearInterval(pingInterval);
-                router.push(`/${mode}/${room.id}?me=${myId}`);
-            } else {
-                // 3. Subscribe for match
-                matchChannel = supabase
-                    .channel(`match:${myId}`)
-                    .on('postgres_changes', {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'users_temp',
-                        filter: `id=eq.${myId}`
-                    }, async (payload) => {
-                        if (payload.new.status === 'matched') {
-                            let retries = 6;
-                            while (retries > 0) {
-                                const { data: roomData } = await supabase
-                                    .from('rooms')
-                                    .select('*')
-                                    .or(`user1.eq.${myId},user2.eq.${myId}`)
-                                    .order('created_at', { ascending: false })
-                                    .limit(1)
-                                    .single();
-                                
-                                if (roomData) {
-                                    clearInterval(pingInterval);
-                                    router.push(`/${mode}/${roomData.id}?me=${myId}`);
-                                    return;
-                                }
-                                await new Promise(r => setTimeout(r, 500));
-                                retries--;
+                // 1. Try immediate match & insert waitlist
+                const room = await findMatch(myId, mode, vibe, answers, debate);
+                
+                if (room) {
+                    clearInterval(pingInterval);
+                    router.push(`/${mode}/${room.id}?me=${myId}`);
+                } else {
+                    // 2. Subscribe for match via Firebase /queue/${myId}
+                    myQueueRef = ref(rtdb, `queue/${myId}`);
+                    onValue(myQueueRef, (snapshot) => {
+                        if (snapshot.exists()) {
+                            const val = snapshot.val();
+                            if (val.status === 'matched' && val.roomId) {
+                                clearInterval(pingInterval);
+                                off(myQueueRef);
+                                // Cleanup waitlist entry
+                                remove(myQueueRef);
+                                router.push(`/${mode}/${val.roomId}?me=${myId}`);
                             }
-                            setError('Match established but room failed to instantiate. Please try again.');
                         }
-                    })
-                    .subscribe();
+                    }, (err) => {
+                        console.error("Queue sub failed:", err);
+                        setError(`Database connection failed: ${err.message}. Please configure Firebase Realtime Database Rules to public (read/write = true).`);
+                    });
+                }
+            } catch (err: any) {
+                console.error("Firebase Matching Error:", err);
+                setError(`Connection failed: ${err.message || err}. Please ensure your Firebase Realtime Database rules allow read and write access.`);
             }
         };
 
@@ -124,9 +115,12 @@ function MatchingContent() {
         // Proper React Cleanup
         return () => {
             if (pingInterval) clearInterval(pingInterval);
-            if (matchChannel) supabase.removeChannel(matchChannel);
+            if (myQueueRef) {
+                off(myQueueRef);
+                remove(myQueueRef); // Remove from queue on exit
+            }
         };
-    }, [mode, layout, selection, router]);
+    }, [mode, vibe, questionText, answerText, debateTopic, debateStance, router]);
 
     if (error) {
         return (
