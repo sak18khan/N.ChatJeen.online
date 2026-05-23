@@ -78,9 +78,9 @@ export async function findMatch(
     if (user.status !== 'waiting') return false;
     if (user.mode !== mode) return false;
     
-    // Check if partner is active (ping in last 25 seconds)
+    // Check if partner is active (ping in last 120 seconds to prevent clock-skew mismatch)
     const lastPing = user.last_ping || 0;
-    if (now - lastPing > 25000) return false;
+    if (now - lastPing > 120000) return false;
 
     // Vibe filter
     if (vibe !== 'Any' && user.vibe !== 'Any' && user.vibe !== vibe) {
