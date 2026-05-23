@@ -4,13 +4,13 @@ import { getDatabase, ref, onValue } from "firebase/database";
 const dbUrl = `https://chatjeen-93bcc-default-rtdb.asia-southeast1.firebasedatabase.app`;
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+  apiKey: "AIzaSyBaPcIj13UBtYjM0obEugMtGIplEJ3Fx-Q",
+  authDomain: "chatjeen-93bcc.firebaseapp.com",
+  projectId: "chatjeen-93bcc",
+  storageBucket: "chatjeen-93bcc.firebasestorage.app",
+  messagingSenderId: "1051862658643",
+  appId: "1:1051862658643:web:58ffb89aee9648ea3d20a6",
+  measurementId: "G-8ZB3RJPCF8",
   databaseURL: dbUrl
 };
 
