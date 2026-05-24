@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'OmeTV Alternative | Ad-Free Anonymous Chat | ChatJeen',
   description: 'Looking for a better OmeTV alternative? ChatJeen provides a faster, safer, and cleaner environment for anonymous text chat without intrusive ads or paywalls.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/ome-tv-alternative'
+  }
 };
 
 export default function OmeTvAlternativePage() {
@@ -32,8 +35,60 @@ export default function OmeTvAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why should I use ChatJeen instead of OmeTV?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen offers a completely anonymous text-only environment with advanced privacy protections, smart matchmaking, and interest tags, compared to OmeTV's video focus."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ChatJeen free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen is 100% free with no hidden charges, coin systems, or subscriptions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does ChatJeen protect my identity?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolutely. ChatJeen has a zero-knowledge logging policy and does not require any sign-up or profile creation."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does ChatJeen prevent spam?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen utilizes an automated moderation sentinel, rate limits, and level-based feature locks to deter spammers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I match with users from specific countries?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen features a country filter dropdown that allows you to match with users from specific regions or 'Anywhere'."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function OmeTvAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">No Social Logins</h3>
-              <p className="text-muted-foreground text-sm">Unlike OmeTV which often forces you to link an account, ChatJeen respects your privacy. Open the site and start chatting anonymously.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Paywalls</h3>
-              <p className="text-muted-foreground text-sm">We don't use 'coins' or 'VIP' subscriptions. Every user gets the same high-quality matchmaking and connection speed.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">No Ads</h3>
-              <p className="text-muted-foreground text-sm">Enjoy an uninterrupted chatting session. No banner ads, no popups, just a clean interface designed for conversation.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Social Logins</h3>
+               <p className="text-muted-foreground text-sm">Unlike OmeTV which often forces you to link an account, ChatJeen respects your privacy. Open the site and start chatting anonymously.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Paywalls</h3>
+               <p className="text-muted-foreground text-sm">We don't use 'coins' or 'VIP' subscriptions. Every user gets the same high-quality matchmaking and connection speed.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Ads</h3>
+               <p className="text-muted-foreground text-sm">Enjoy an uninterrupted chatting session. No banner ads, no popups, just a clean interface designed for conversation.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function OmeTvAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

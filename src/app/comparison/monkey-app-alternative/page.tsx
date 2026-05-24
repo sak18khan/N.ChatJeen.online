@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Monkey App Alternative | Browser-Based Random Chat | ChatJeen',
   description: 'Looking for a Monkey App alternative? ChatJeen brings fast, secure, and fun random text chat directly to your browser—no app download needed.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/monkey-app-alternative'
+  }
 };
 
 export default function MonkeyAppAlternativePage() {
@@ -32,8 +35,60 @@ export default function MonkeyAppAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How does ChatJeen compare to the Monkey App?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Unlike Monkey App, ChatJeen requires no phone number or registration, operates strictly in text mode to protect privacy, and has a strict no-NSFW policy."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does ChatJeen's level progression work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen rewards active chatting with XP. As you chat, you level up and unlock premium features like custom bubble themes and full screen effects."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I share photos on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, photo sharing unlocks once you reach Level 3, which helps prevent immediate spam."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the online count on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen displays a live count of active users in WAITING or CHATTING states, updated every 30 seconds."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ChatJeen safe for teenagers?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen requires users to be 18 or older, and implements robust toxicity scoring, report buttons, and shadowbans to ensure maximum safety."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function MonkeyAppAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">No Download Required</h3>
-              <p className="text-muted-foreground text-sm">Save your storage space. ChatJeen works flawlessly on Safari, Chrome, and any modern mobile browser without needing an installation.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Don't Link Your Snap</h3>
-              <p className="text-muted-foreground text-sm">Keep your personal social media private. Unlike Monkey which encourages linking external profiles, we champion complete anonymity.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Conversations</h3>
-              <p className="text-muted-foreground text-sm">Skip the superficial 15-second video judgments. Jump into a text chat where personality actually matters.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Download Required</h3>
+               <p className="text-muted-foreground text-sm">Save your storage space. ChatJeen works flawlessly on Safari, Chrome, and any modern mobile browser without needing an installation.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Don't Link Your Snap</h3>
+               <p className="text-muted-foreground text-sm">Keep your personal social media private. Unlike Monkey which encourages linking external profiles, we champion complete anonymity.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Conversations</h3>
+               <p className="text-muted-foreground text-sm">Skip the superficial 15-second video judgments. Jump into a text chat where personality actually matters.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function MonkeyAppAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

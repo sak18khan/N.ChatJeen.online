@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, Gamepad2, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Omegle Alternative | The Best Anonymous Chat Platform',
-  description: 'Looking for an Omegle alternative? ChatJeen offers secure, moderated anonymous text chat. No sign-up required.',
+  description: 'Looking for a secure, moderated Omegle alternative? ChatJeen offers instant anonymous text chat with strangers. No registration required.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/omegle-alternative'
+  }
 };
 
 export default function OmegleAlternativePage() {
@@ -32,8 +35,60 @@ export default function OmegleAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is ChatJeen a good alternative to Omegle?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen is designed as a modern, text-based anonymous chat platform that replaces the simplicity of Omegle with improved security, moderation, and gamified features."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to register to use ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No, ChatJeen requires no registration, email, or passwords. It is 100% free and anonymous."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is ChatJeen safer than Omegle was?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen features a strict safety sentinel system, NSFW word filtering, and automated report limits to ensure a clean chat experience."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I filter matches by interests on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! You can choose interest tags like Gaming, Music, and Sports to match with people who share your hobbies."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does ChatJeen support multiple languages?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen has built-in auto language translation between matched users to bridge communication gaps."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function OmegleAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Chat</h3>
-              <p className="text-muted-foreground text-sm">Real-time, instant matching with people who share your interests.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Instant Matching</h3>
-              <p className="text-muted-foreground text-sm">Our smart matchmaker pairs you with the perfect conversation partner in seconds.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Registration</h3>
-              <p className="text-muted-foreground text-sm">Jump straight into the action. No email, no password, no hassle.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Chat</h3>
+               <p className="text-muted-foreground text-sm">Real-time, instant matching with people who share your interests.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Instant Matching</h3>
+               <p className="text-muted-foreground text-sm">Our smart matchmaker pairs you with the perfect conversation partner in seconds.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Registration</h3>
+               <p className="text-muted-foreground text-sm">Jump straight into the action. No email, no password, no hassle.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function OmegleAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

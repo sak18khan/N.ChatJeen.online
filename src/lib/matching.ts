@@ -20,6 +20,8 @@ export interface MatchingEntry {
     stance: 'Pro' | 'Con' | 'Random';
   };
   roomId?: string;
+  interests?: string;
+  country?: string;
 }
 
 export async function updatePing(userId: string) {
@@ -43,7 +45,9 @@ export async function findMatch(
   mode: ChatMode, 
   vibe: string = 'Any', 
   answers: any = null,
-  debate: any = null
+  debate: any = null,
+  interests: string = "",
+  country: string = ""
 ): Promise<any> {
   // 1. Update/Write our own queue entry
   const myQueueRef = ref(rtdb, `queue/${userId}`);
@@ -55,10 +59,20 @@ export async function findMatch(
     joined_at: Date.now(),
     last_ping: Date.now(),
     answers,
-    debate
+    debate,
+    interests,
+    country
   };
   await set(myQueueRef, entry);
   await updatePing(userId);
+
+  // Store user-specific interests and country keys for cleanup/state reference
+  if (interests) {
+    await set(ref(rtdb, `interests/${userId}`), interests);
+  }
+  if (country) {
+    await set(ref(rtdb, `country/${userId}`), country);
+  }
 
   // 2. Fetch all waiting users to find a suitable partner
   const queueRef = ref(rtdb, 'queue');
@@ -71,7 +85,7 @@ export async function findMatch(
   const queueData = snapshot.val() as Record<string, MatchingEntry>;
   const now = Date.now();
 
-  // Find candidate partners
+  // Find candidate partners matching basic filters
   const candidates = Object.values(queueData).filter((user) => {
     // Basic criteria
     if (user.id === userId) return false;
@@ -110,11 +124,54 @@ export async function findMatch(
     return true;
   });
 
-  // Sort by oldest joined first
+  // Sort by oldest joined first (FIFO queue behavior)
   candidates.sort((a, b) => a.joined_at - b.joined_at);
 
-  if (candidates.length > 0) {
-    const partner = candidates[0];
+  // Scan the top 50 queue entries (equivalent to LRANGE 0 49)
+  const scannedCandidates = candidates.slice(0, 50);
+
+  // Parse my interest selections
+  const myInterestsSet = new Set(
+    interests.split(',')
+      .map(i => i.trim().toLowerCase())
+      .filter(i => i && i !== 'just random')
+  );
+
+  const getOverlappingInterestsCount = (candidateInterestsStr?: string) => {
+    if (!candidateInterestsStr || myInterestsSet.size === 0) return 0;
+    const candidateInterests = candidateInterestsStr.split(',')
+      .map(i => i.trim().toLowerCase())
+      .filter(i => i);
+    let overlapCount = 0;
+    for (const interest of candidateInterests) {
+      if (myInterestsSet.has(interest)) {
+        overlapCount++;
+      }
+    }
+    return overlapCount;
+  };
+
+  let partner = null;
+
+  // Phase 1: Scan for overlapping interest & country priority
+  // Priority 1: same interests + same country
+  if (myInterestsSet.size > 0 && country) {
+    partner = scannedCandidates.find(c => getOverlappingInterestsCount(c.interests) > 0 && c.country === country);
+  }
+  // Priority 2: same interests
+  if (!partner && myInterestsSet.size > 0) {
+    partner = scannedCandidates.find(c => getOverlappingInterestsCount(c.interests) > 0);
+  }
+  // Priority 3: same country
+  if (!partner && country) {
+    partner = scannedCandidates.find(c => c.country === country);
+  }
+  // Phase 2: Fallback to first compatible user (FIFO random matchmaking)
+  if (!partner && scannedCandidates.length > 0) {
+    partner = scannedCandidates[0];
+  }
+
+  if (partner) {
     const roomId = `room-${userId}-${partner.id}-${Date.now()}`;
 
     // Determine stances for debate mode
@@ -161,15 +218,12 @@ export async function findMatch(
       await set(roomRef, roomDetails);
 
       const result = await runTransaction(partnerQueueRef, (currentData: MatchingEntry | null) => {
-        // If currentData is null (due to empty local cache), return a placeholder matched state
-        // to let the Firebase SDK query the server for the actual data.
         if (currentData === null) {
           return {
             status: 'matched',
             roomId: roomId
           } as any;
         }
-        // If the user is waiting, claim them
         if (currentData.status === 'waiting') {
           return {
             ...currentData,
@@ -177,7 +231,6 @@ export async function findMatch(
             roomId: roomId
           };
         }
-        // If they are already matched, abort transaction
         return undefined; 
       });
 
@@ -191,6 +244,12 @@ export async function findMatch(
         // Remove our own waitlist entry since we are matched
         await remove(myQueueRef);
 
+        // Clean up interests and country keys for both matched users
+        await remove(ref(rtdb, `interests/${userId}`));
+        await remove(ref(rtdb, `country/${userId}`));
+        await remove(ref(rtdb, `interests/${partner.id}`));
+        await remove(ref(rtdb, `country/${partner.id}`));
+
         return roomDetails;
       } else {
         // Claim failed, clean up the pre-created room
@@ -198,7 +257,6 @@ export async function findMatch(
       }
     } catch (err) {
       console.error('Transaction match failed:', err);
-      // Clean up room if transaction crashed
       await remove(roomRef);
     }
   }
@@ -220,6 +278,8 @@ export async function cleanupStaleUsers() {
       const lastPing = user.last_ping || 0;
       if (now - lastPing > 60000) {
         updates[`queue/${key}`] = null;
+        updates[`interests/${key}`] = null;
+        updates[`country/${key}`] = null;
       }
     });
 

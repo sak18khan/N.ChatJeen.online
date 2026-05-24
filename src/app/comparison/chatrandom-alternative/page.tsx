@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Chatrandom Alternative | Modern Anonymous Chat | ChatJeen',
   description: 'Searching for a Chatrandom alternative? ChatJeen is the modern, fast, and secure way to chat with strangers online via high-quality text chat.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/chatrandom-alternative'
+  }
 };
 
 export default function ChatrandomAlternativePage() {
@@ -32,8 +35,60 @@ export default function ChatrandomAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is ChatJeen a better choice than Chatrandom?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen provides a highly secure, text-only chat experience that protects you from webcam spam and unsolicited media found on Chatrandom."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What interests are available on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can choose interests such as Gaming, Music, Movies & TV, Study, Language Practice, Travel, Sports, or Just Random."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I translate chats in real-time?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! ChatJeen automatically translates incoming messages if you and your match speak different languages."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I skip to the next person?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can click the 'Leave' button or the 'Report' button to instantly skip the current chat and search for a new match."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does ChatJeen store chat history?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. To protect your privacy, ChatJeen does not store any message history on its servers once a room is closed."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function ChatrandomAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Modern Tech Stack</h3>
-              <p className="text-muted-foreground text-sm">Built on cutting-edge web technologies, ChatJeen feels snappy and responsive, unlike older legacy platforms.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">No Intrusive Upsells</h3>
-              <p className="text-muted-foreground text-sm">We don't bombard you with popups asking you to pay for 'gender filters' or 'VIP status'. Just pure, uncompromising chat.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Text Excellence</h3>
-              <p className="text-muted-foreground text-sm">Instead of glitchy video feeds, we focus on providing the absolute best encrypted Text Chat experience on the market.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Modern Tech Stack</h3>
+               <p className="text-muted-foreground text-sm">Built on cutting-edge web technologies, ChatJeen feels snappy and responsive, unlike older legacy platforms.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Intrusive Upsells</h3>
+               <p className="text-muted-foreground text-sm">We don't bombard you with popups asking you to pay for 'gender filters' or 'VIP status'. Just pure, uncompromising chat.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Text Excellence</h3>
+               <p className="text-muted-foreground text-sm">Instead of glitchy video feeds, we focus on providing the absolute best encrypted Text Chat experience on the market.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function ChatrandomAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

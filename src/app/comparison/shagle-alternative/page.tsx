@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Shagle Alternative | Premium Random Chat for Free | ChatJeen',
   description: 'Looking for a Shagle alternative? Enjoy a premium-feeling random text chat experience for free on ChatJeen. Fast matching, high privacy, and no hidden fees.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/shagle-alternative'
+  }
 };
 
 export default function ShagleAlternativePage() {
@@ -32,8 +35,60 @@ export default function ShagleAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why is ChatJeen the top alternative to Shagle?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen is dedicated to text conversations, eliminating the video-spam issues on Shagle while offering country filtering and interest matching."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I use ChatJeen on my phone?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen is designed with a mobile-first responsive UI that looks stunning at a 375px viewport and runs perfectly on all mobile browsers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do the ad slot placeholders work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen has unobtrusive banner ad slot placeholders ready for AdSense integration, ensuring advertisements do not interfere with active chat sessions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need a VPN to use ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. ChatJeen is globally accessible, but you can use the country filter if you want to connect with local users."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the safety sentinel?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Safety Sentinel is our backend middleware that automatically scores and blocks toxic or offensive messages."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function ShagleAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Free Premium Feel</h3>
-              <p className="text-muted-foreground text-sm">We provide a beautiful, fast, and feature-rich interface without hiding the best parts behind a paywall.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Ultimate Privacy</h3>
-              <p className="text-muted-foreground text-sm">We don't collect data to sell. Our business model isn't built on compromising your personal information.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h3>
-              <p className="text-muted-foreground text-sm">Connect instantly. Our lightning-fast text interface is designed for real-time engagement and authentic connection.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Free Premium Feel</h3>
+               <p className="text-muted-foreground text-sm">We provide a beautiful, fast, and feature-rich interface without hiding the best parts behind a paywall.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Ultimate Privacy</h3>
+               <p className="text-muted-foreground text-sm">We don't collect data to sell. Our business model isn't built on compromising your personal information.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h3>
+               <p className="text-muted-foreground text-sm">Connect instantly. Our lightning-fast text interface is designed for real-time engagement and authentic connection.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function ShagleAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

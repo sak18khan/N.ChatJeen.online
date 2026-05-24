@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Zap, Globe, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Chatroulette Alternative | A Safer Way to Chat | ChatJeen',
   description: 'Looking for a better Chatroulette alternative? ChatJeen provides a faster, safer, and cleaner environment for random anonymous text chat.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/comparison/chatroulette-alternative'
+  }
 };
 
 export default function ChatrouletteAlternativePage() {
@@ -32,8 +35,60 @@ export default function ChatrouletteAlternativePage() {
     }
   ];
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What makes ChatJeen a safe Chatroulette alternative?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "ChatJeen is text-focused and uses a Safety Sentinel middleware, avoiding the unsolicited video content often found on Chatroulette."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How fast are matches on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Matches on ChatJeen are nearly instant, using a high-performance database queue system."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Are there interest tags on ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen has interest tag selection to help users find matches who share similar passions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there an installable app for ChatJeen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, ChatJeen supports PWA installation so you can add it directly to your mobile home screen."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How can I report abusive users?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "During a chat, a persistent 'Report' button is available in the bottom-right corner. Submitting a report will flag the user and immediately find you a new match."
+        }
+      }
+    ]
+  };
+
   return (
     <main className="min-h-screen bg-background text-foreground p-8 md:p-24 flex flex-col items-center">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      
       <div className="max-w-4xl w-full space-y-16">
         <header className="text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary text-xs font-black uppercase tracking-widest rounded-full border border-primary/20">
@@ -49,21 +104,21 @@ export default function ChatrouletteAlternativePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <ShieldCheck className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Safer Environment</h3>
-              <p className="text-muted-foreground text-sm">By focusing on high-quality Text Chat, we significantly reduce the risk of unwanted visual exposure, making ChatJeen a safer place to talk.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h3>
-              <p className="text-muted-foreground text-sm">Our modern tech stack ensures you connect with new partners almost instantly, without the lag often found on older platforms.</p>
-           </div>
-           <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
-              <MessageCircle className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Real Connections</h3>
-              <p className="text-muted-foreground text-sm">Engage in meaningful conversations instead of just skipping through video feeds. We prioritize personality over appearance.</p>
-           </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <ShieldCheck className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Safer Environment</h3>
+               <p className="text-muted-foreground text-sm">By focusing on high-quality Text Chat, we significantly reduce the risk of unwanted visual exposure, making ChatJeen a safer place to talk.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <Zap className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h3>
+               <p className="text-muted-foreground text-sm">Our modern tech stack ensures you connect with new partners almost instantly, without the lag often found on older platforms.</p>
+            </div>
+            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
+               <MessageCircle className="w-10 h-10 text-primary" />
+               <h3 className="text-xl font-bold uppercase italic tracking-tight">Real Connections</h3>
+               <p className="text-muted-foreground text-sm">Engage in meaningful conversations instead of just skipping through video feeds. We prioritize personality over appearance.</p>
+            </div>
         </section>
 
         <section className="space-y-8">
@@ -87,6 +142,16 @@ export default function ChatrouletteAlternativePage() {
                     ))}
                  </tbody>
               </table>
+           </div>
+
+           {/* AD PLACEHOLDER SLOT (TASK 7.2) */}
+           {/* TODO: Replace with AdSense ins tag. Publisher ID: ca-pub-XXXXXXXXX */}
+           <div className="ad-slot ad-slot-banner" 
+                style={{width:"100%",maxWidth:"300px",minHeight:"250px",
+                       margin:"1rem auto",background:"#111",border:"1px dashed #333",
+                       display:"flex",alignItems:"center",justifyContent:"center",
+                       color:"#555",fontSize:"12px"}}>
+             Advertisement
            </div>
         </section>
 

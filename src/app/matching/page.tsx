@@ -25,6 +25,10 @@ function MatchingContent() {
     // Debate Mode parameters
     const debateTopic = searchParams.get('topic') || '';
     const debateStance = (searchParams.get('stance') as 'Pro' | 'Con' | 'Random') || 'Random';
+
+    // Interest tags & Country filter parameters
+    const interests = searchParams.get('interests') || '';
+    const country = searchParams.get('country') || '';
     
     const [userId, setUserId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -80,7 +84,7 @@ function MatchingContent() {
                 pingInterval = setInterval(() => updatePing(myId), 10000);
 
                 // 1. Try immediate match & insert waitlist
-                const room = await findMatch(myId, mode, vibe, answers, debate);
+                const room = await findMatch(myId, mode, vibe, answers, debate, interests, country);
                 
                 if (room) {
                     clearInterval(pingInterval);
@@ -119,8 +123,13 @@ function MatchingContent() {
                 off(myQueueRef);
                 remove(myQueueRef); // Remove from queue on exit
             }
+            // Clean up interests and country keys when leaving search
+            import('firebase/database').then(({ ref: dbRef, remove: dbRemove }) => {
+                dbRemove(dbRef(rtdb, `interests/${myId}`));
+                dbRemove(dbRef(rtdb, `country/${myId}`));
+            });
         };
-    }, [mode, vibe, questionText, answerText, debateTopic, debateStance, router]);
+    }, [mode, vibe, questionText, answerText, debateTopic, debateStance, interests, country, router, myId]);
 
     if (error) {
         return (

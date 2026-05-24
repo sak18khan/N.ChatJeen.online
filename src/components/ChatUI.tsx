@@ -71,6 +71,8 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
   const [partnerIdentity, setPartnerIdentity] = useState<UserIdentity | null>(null);
   const [showKarma, setShowKarma] = useState(false);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState('');
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -461,33 +463,58 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
     setIsGeneratingIcebreaker(false);
   };
 
-  const handleReport = async () => {
-    if (!partnerId) return;
+  const handleReportClick = () => {
+    setShowReportModal(true);
+  };
+
+  const submitReport = async () => {
+    if (!selectedReportReason) return;
+    
+    // Close modal immediately
+    setShowReportModal(false);
+    
+    setToast({ message: "Report submitted. Finding new chat...", type: 'success' });
+    
     try {
-      // Write report to Firebase
-      const reportsRef = ref(rtdb, `reports/${partnerId}`);
-      const newReportRef = push(reportsRef);
-      await set(newReportRef, {
-        id: newReportRef.key,
-        roomId,
-        reason: 'User reported in chat session',
-        timestamp: Date.now()
+      // 1. Post to REST API
+      await fetch('/api/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reason: selectedReportReason,
+          sessionId: roomId,
+          reporterId: myId,
+          timestamp: Date.now()
+        })
       });
 
-      // Fetch reports count to potentially shadowban
-      const countSnap = await get(ref(rtdb, `reports_count/${partnerId}`));
-      const newCount = (countSnap.val() || 0) + 1;
-      await set(ref(rtdb, `reports_count/${partnerId}`), newCount);
+      // 2. Perform direct database logging (same as existing mechanism)
+      if (partnerId) {
+        const reportsRef = ref(rtdb, `reports/${partnerId}`);
+        const newReportRef = push(reportsRef);
+        await set(newReportRef, {
+          id: newReportRef.key,
+          roomId,
+          reason: selectedReportReason,
+          timestamp: Date.now()
+        });
 
-      if (newCount >= 3) {
-        await set(ref(rtdb, `shadowbans/${partnerId}`), true);
+        const countSnap = await get(ref(rtdb, `reports_count/${partnerId}`));
+        const newCount = (countSnap.val() || 0) + 1;
+        await set(ref(rtdb, `reports_count/${partnerId}`), newCount);
+
+        if (newCount >= 3) {
+          await set(ref(rtdb, `shadowbans/${partnerId}`), true);
+        }
       }
-
-      setToast({ message: 'User reported successfully.', type: 'success' });
-      handleSkip();
     } catch (e) {
-      console.error(e);
+      console.error("Error submitting report:", e);
     }
+    
+    setSelectedReportReason('');
+    
+    // Skip to next partner immediately
+    handleSkip();
   };
 
   return (
@@ -649,7 +676,7 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
                          </div>
                          
                          <div className="flex items-center gap-6 mt-2 ml-5">
-                            <button onClick={handleReport} className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Report abuse</button>
+                            <button onClick={handleReportClick} className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Report abuse</button>
                             <button className="text-xs font-bold text-white/30 hover:text-white/50 transition-colors uppercase tracking-wider underline">Feedback</button>
                          </div>
                     </div>
@@ -878,6 +905,70 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
             </div>
         )}
       </div>
+
+      {status === 'connected' && (
+        <button 
+          onClick={handleReportClick}
+          className="absolute bottom-[100px] right-4 z-40 bg-[#111]/80 hover:bg-black border border-white/10 hover:border-red-500/30 text-white/40 hover:text-red-500 px-3 py-1.5 rounded-full flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest transition-all shadow-xl backdrop-blur-md"
+        >
+          <Flag className="w-3.5 h-3.5 fill-current/10" />
+          <span>Report</span>
+        </button>
+      )}
+
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4 select-none">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm bg-[#111] border border-white/10 rounded-[2.5rem] p-6 shadow-2xl relative"
+          >
+            <h3 className="text-base font-black uppercase italic tracking-tight mb-4 text-white flex items-center gap-2">
+              <Flag className="w-4 h-4 text-red-500" /> Report User
+            </h3>
+            <p className="text-white/40 text-[11px] font-medium mb-6">
+              Select a reason for reporting this user. Spam or inappropriate behavior will result in a shadowban.
+            </p>
+            
+            <div className="flex flex-col gap-2 mb-6">
+              {['Spam', 'Inappropriate content', 'Harassment', 'Underage concern', 'Other'].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => setSelectedReportReason(reason)}
+                  className={cn(
+                    "w-full py-3 px-4 rounded-xl text-xs font-bold text-left border transition-colors",
+                    selectedReportReason === reason
+                      ? "bg-red-500/10 border-red-500 text-red-500"
+                      : "bg-black/40 border-white/10 text-white/50 hover:bg-white/5"
+                  )}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setSelectedReportReason('');
+                }}
+                className="py-3 rounded-full border border-white/10 text-white/60 text-xs font-black uppercase tracking-widest hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!selectedReportReason}
+                onClick={submitReport}
+                className="py-3 rounded-full bg-red-500 hover:bg-red-400 disabled:opacity-40 disabled:hover:bg-red-500 text-white text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-500/15"
+              >
+                Submit
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       <AnimatePresence>
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         {showKarma && partnerId && (

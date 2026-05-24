@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
+import PwaBanner from "@/components/PwaBanner";
 
 export const metadata: Metadata = {
   title: "ChatJeen | Meet New People Safely & Anonymously",
@@ -60,6 +62,13 @@ export default function RootLayout({
       </head>
       <body className="antialiased selection:bg-primary/20">
         {children}
+        <PwaBanner />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6764669459611839"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
