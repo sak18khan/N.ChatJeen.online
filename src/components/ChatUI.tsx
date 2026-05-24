@@ -195,12 +195,36 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
       // Mark active at room creation
       set(ref(rtdb, `rooms/${roomId}/active/${myId}`), Date.now());
 
+      // Sync status to Redis
+      fetch('/api/user-state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: myId, state: 'CHATTING' })
+      }).catch(console.warn);
+
       heartbeatInterval = setInterval(() => {
         updatePing(myId);
         set(ref(rtdb, `rooms/${roomId}/active/${myId}`), Date.now());
+
+        // Refresh Redis status
+        fetch('/api/user-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: myId, state: 'CHATTING' })
+        }).catch(console.warn);
       }, 5000);
     }
-    return () => clearInterval(heartbeatInterval);
+    return () => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      // Clear status in Redis on exit
+      if (myId) {
+        fetch('/api/user-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: myId, state: 'OFFLINE' })
+        }).catch(console.warn);
+      }
+    };
   }, [status, myId, roomId]);
 
   const formatTime = (seconds: number) => {
@@ -229,6 +253,13 @@ export default function ChatUI({ roomId, myId, onSkip, onReport, mode, variant =
         setShowKarma(true);
         return; 
     }
+
+    // Clear status in Redis
+    fetch('/api/user-state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: myId, state: 'OFFLINE' })
+    }).catch(console.warn);
 
     // Write skip action
     await set(ref(rtdb, `rooms/${roomId}/actions/${myId}/skip`), true);

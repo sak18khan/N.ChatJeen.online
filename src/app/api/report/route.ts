@@ -1,7 +1,7 @@
 import { rtdb } from '@/lib/firebaseClient';
 import { ref, push, set } from 'firebase/database';
 import { NextResponse } from 'next/server';
-import { createClient } from 'redis';
+import { redis } from '@/lib/redisClient';
 
 export async function POST(request: Request) {
   try {
@@ -28,21 +28,15 @@ export async function POST(request: Request) {
       ...reportObj
     });
 
-    // 2. Optional: Store report in Redis list "reports" if REDIS_URL is configured
-    const redisUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL;
-    if (redisUrl) {
-      try {
-        const redisClient = createClient({ url: redisUrl });
-        await redisClient.connect();
-        await redisClient.lPush('reports', JSON.stringify({
-          id: newReportRef.key,
-          ...reportObj
-        }));
-        await redisClient.disconnect();
-        console.log("Logged report to Redis successfully");
-      } catch (redisErr) {
-        console.warn("Failed to write report to Redis:", redisErr);
-      }
+    // 2. Store report in Redis list "reports" as JSON string
+    try {
+      await redis.lpush('reports', JSON.stringify({
+        id: newReportRef.key,
+        ...reportObj
+      }));
+      console.log("Logged report to Upstash Redis successfully");
+    } catch (redisErr) {
+      console.warn("Failed to write report to Upstash Redis:", redisErr);
     }
 
     return NextResponse.json({ status: 'ok', id: newReportRef.key });

@@ -64,6 +64,13 @@ function MatchingContent() {
         const startMatching = async () => {
             setStatus('searching');
             
+            // Sync status to Redis
+            fetch('/api/user-state', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: myId, state: 'WAITING' })
+            }).catch(console.warn);
+            
             // Anti-spam cooldown (reduced to 1s)
             const lastMatchStr = localStorage.getItem('chatjeen_last_match_time');
             if (lastMatchStr) {
@@ -80,8 +87,15 @@ function MatchingContent() {
                 const answers = questionText && answerText ? { question: questionText, answer: answerText } : null;
                 const debate = vibe === 'Debate' ? { topic: debateTopic, stance: debateStance } : null;
 
-                // Start heartbeat ping
-                pingInterval = setInterval(() => updatePing(myId), 10000);
+                // Start heartbeat ping and state sync
+                pingInterval = setInterval(() => {
+                    updatePing(myId);
+                    fetch('/api/user-state', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: myId, state: 'WAITING' })
+                    }).catch(console.warn);
+                }, 10000);
 
                 // 1. Try immediate match & insert waitlist
                 const room = await findMatch(myId, mode, vibe, answers, debate, interests, country);
@@ -128,6 +142,12 @@ function MatchingContent() {
                 dbRemove(dbRef(rtdb, `interests/${myId}`));
                 dbRemove(dbRef(rtdb, `country/${myId}`));
             });
+            // Clear status in Redis
+            fetch('/api/user-state', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: myId, state: 'OFFLINE' })
+            }).catch(console.warn);
         };
     }, [mode, vibe, questionText, answerText, debateTopic, debateStance, interests, country, router, myId]);
 
