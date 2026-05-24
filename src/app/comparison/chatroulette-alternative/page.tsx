@@ -106,17 +106,17 @@ export default function ChatrouletteAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Safer Environment</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Safer Environment</h2>
                <p className="text-muted-foreground text-sm">By focusing on high-quality Text Chat, we significantly reduce the risk of unwanted visual exposure, making ChatJeen a safer place to talk.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h2>
                <p className="text-muted-foreground text-sm">Our modern tech stack ensures you connect with new partners almost instantly, without the lag often found on older platforms.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Real Connections</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Real Connections</h2>
                <p className="text-muted-foreground text-sm">Engage in meaningful conversations instead of just skipping through video feeds. We prioritize personality over appearance.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function ChatrouletteAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

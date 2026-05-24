@@ -195,7 +195,7 @@ export default function HomeClient() {
       <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/5 px-4 h-14 flex items-center justify-center shrink-0">
           <Link href="/" className="flex flex-col items-center hover:opacity-80 transition-opacity">
               <h1 className="text-base font-black italic tracking-tighter uppercase text-white">Chat<span className="text-yellow-400 not-italic">Jeen</span></h1>
-              <span className="text-[10px] text-white/40 font-medium">www.chatjeen.online</span>
+              <span className="text-[10px] text-white/60 font-medium">www.chatjeen.online</span>
           </Link>
       </header>
 
@@ -222,7 +222,7 @@ export default function HomeClient() {
               <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter uppercase italic leading-none">
                 Chat<span className="text-yellow-400 not-italic">Jeen</span>
               </h2>
-              <p className="text-[10px] sm:text-[12px] font-bold text-white/40 uppercase tracking-[0.2em]">Safe. Fun. Gamified.</p>
+              <p className="text-[10px] sm:text-[12px] font-bold text-white/60 uppercase tracking-[0.2em]">Safe. Fun. Gamified.</p>
             </div>
 
             <p className="text-white/60 text-xs sm:text-sm leading-relaxed max-w-sm">
@@ -236,7 +236,7 @@ export default function HomeClient() {
                   <AnimatedCounter value={onlineCount} /> online now
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-white/40 font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-white/60 font-medium">
                 <ShieldCheck className="w-4 h-4 text-yellow-400" />
                 <span>Strict NSFW filters enabled</span>
               </div>
@@ -403,7 +403,7 @@ export default function HomeClient() {
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/10">Question Matcher</span>
-                        <span className="text-[9px] font-bold text-white/30 uppercase tracking-wider">Answer to unlock chat starting topic</span>
+                        <span className="text-[9px] font-bold text-white/55 uppercase tracking-wider">Answer to unlock chat starting topic</span>
                       </div>
                       <p className="text-xs font-extrabold text-white leading-relaxed">{question.text}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-1">
@@ -456,7 +456,7 @@ export default function HomeClient() {
            style={{width:"100%",maxWidth:"728px",minHeight:"90px",
                   margin:"1rem auto",background:"#111",border:"1px dashed #333",
                   display:"flex",alignItems:"center",justifyContent:"center",
-                  color:"#555",fontSize:"12px"}}>
+                  color:"#a3a3a3",fontSize:"12px"}}>
         Advertisement
       </div>
 
@@ -470,7 +470,7 @@ export default function HomeClient() {
                   <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">
                       How It <span className="text-yellow-400 not-italic">Works</span>
                   </h2>
-                  <p className="text-white/40 text-lg font-medium">Three simple steps to start chatting safely.</p>
+                  <p className="text-white/60 text-lg font-medium">Three simple steps to start chatting safely.</p>
               </header>
 
               <div className="relative grid grid-cols-1 md:grid-cols-3 gap-16 md:gap-24">
@@ -492,7 +492,7 @@ export default function HomeClient() {
                           </div>
                           <div className="space-y-3">
                               <h3 className="text-2xl font-black uppercase tracking-tight italic text-white">{item.title}</h3>
-                              <p className="text-sm text-white/40 font-medium leading-relaxed max-w-[200px] mx-auto opacity-70 group-hover:opacity-100 transition-opacity">
+                              <p className="text-sm text-white/55 font-medium leading-relaxed max-w-[200px] mx-auto group-hover:text-white transition-colors duration-300">
                                   {item.desc}
                               </p>
                           </div>
@@ -512,7 +512,7 @@ export default function HomeClient() {
                   <h2 className="text-4xl md:text-5xl font-black italic tracking-tighter uppercase leading-none">
                       Why Choose <span className="text-yellow-400 not-italic">ChatJeen?</span>
                   </h2>
-                  <p className="text-white/40 text-lg font-medium">Everything you need for a safe and fun experience.</p>
+                  <p className="text-white/60 text-lg font-medium">Everything you need for a safe and fun experience.</p>
               </header>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -536,7 +536,7 @@ export default function HomeClient() {
                               <feature.icon className="w-7 h-7" />
                           </div>
                           <h3 className="text-xl font-extrabold mb-4 uppercase tracking-tighter italic text-white">{feature.title}</h3>
-                          <p className="text-white/40 text-sm leading-relaxed font-semibold opacity-80">{feature.desc}</p>
+                          <p className="text-white/60 text-sm leading-relaxed font-semibold">{feature.desc}</p>
                       </motion.div>
                   ))}
               </div>
@@ -551,7 +551,7 @@ export default function HomeClient() {
                       <span className="text-white font-bold text-[13px] uppercase tracking-widest">Live Feedback</span>
                   </span>
                   <div className="w-[1px] h-3.5 bg-white/20 mx-1" />
-                  <span className="text-white/40 text-[13px] font-bold">From Real Users</span>
+                  <span className="text-white/60 text-[13px] font-bold">From Real Users</span>
               </div>
 
               <header className="text-center space-y-6 max-w-2xl px-4">
@@ -560,7 +560,7 @@ export default function HomeClient() {
                       <br />
                       <span className="text-white">Real Stories</span>
                   </h2>
-                  <p className="text-white/40 text-[15px] font-medium leading-relaxed max-w-xl mx-auto">
+                  <p className="text-white/60 text-[15px] font-medium leading-relaxed max-w-xl mx-auto">
                       Hear from thousands of users who have found meaningful conversations and genuine interactions on ChatJeen every day.
                   </p>
               </header>
@@ -601,8 +601,8 @@ export default function HomeClient() {
                           <Heart className="w-6 h-6 text-rose-500" />
                       </div>
                       <div>
-                          <h4 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">Active Community</h4>
-                          <p className="text-white/40 text-[13px] font-medium">Thousands of friendly users online</p>
+                          <h3 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">Active Community</h3>
+                          <p className="text-white/60 text-[13px] font-medium">Thousands of friendly users online</p>
                       </div>
                   </div>
                   <div className="flex flex-col items-center text-center gap-4 group">
@@ -610,8 +610,8 @@ export default function HomeClient() {
                           <Zap className="w-6 h-6 text-yellow-400" />
                       </div>
                       <div>
-                          <h4 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">Lightning Fast</h4>
-                          <p className="text-white/40 text-[13px] font-medium">Instant connections, zero wait time</p>
+                          <h3 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">Lightning Fast</h3>
+                          <p className="text-white/60 text-[13px] font-medium">Instant connections, zero wait time</p>
                       </div>
                   </div>
                   <div className="flex flex-col items-center text-center gap-4 group">
@@ -619,8 +619,8 @@ export default function HomeClient() {
                           <ShieldCheck className="w-6 h-6 text-emerald-500" />
                       </div>
                       <div>
-                          <h4 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">100% Secure</h4>
-                          <p className="text-white/40 text-[13px] font-medium">Your privacy is strictly protected</p>
+                          <h3 className="font-black italic text-white text-[15px] mb-1 uppercase tracking-tight">100% Secure</h3>
+                          <p className="text-white/60 text-[13px] font-medium">Your privacy is strictly protected</p>
                       </div>
                   </div>
               </div>
@@ -631,7 +631,7 @@ export default function HomeClient() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-16 md:gap-24 mb-16">
                   <div className="space-y-6 col-span-1 md:col-span-2">
                       <h3 className="text-4xl font-black uppercase italic tracking-tighter text-white">Chat<span className="text-yellow-400 not-italic">Jeen</span></h3>
-                      <p className="text-white/40 text-lg font-medium leading-relaxed max-w-sm">
+                      <p className="text-white/60 text-lg font-medium leading-relaxed max-w-sm">
                           Making human connection clean, safe, and incredibly easy. Your go-to platform to meet people securely.
                       </p>
                   </div>
@@ -671,10 +671,10 @@ export default function HomeClient() {
               </div>
               
               <div className="py-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div className="text-[9px] text-white/20 font-black uppercase tracking-[0.4em]">
+                  <div className="text-[9px] text-white/50 font-black uppercase tracking-[0.4em]">
                       © 2026 ChatJeen. All rights reserved.
                   </div>
-                  <div className="flex items-center gap-8 text-[10px] text-yellow-400/40 font-black uppercase tracking-[0.2em]">
+                  <div className="flex items-center gap-8 text-[10px] text-yellow-400/70 font-black uppercase tracking-[0.2em]">
                       <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" /> Platform: Secure</span>
                       <span>Connections: Active</span>
                   </div>

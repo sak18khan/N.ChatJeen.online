@@ -106,17 +106,17 @@ export default function ShagleAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Free Premium Feel</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Free Premium Feel</h2>
                <p className="text-muted-foreground text-sm">We provide a beautiful, fast, and feature-rich interface without hiding the best parts behind a paywall.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Ultimate Privacy</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Ultimate Privacy</h2>
                <p className="text-muted-foreground text-sm">We don't collect data to sell. Our business model isn't built on compromising your personal information.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Pure Text Chat</h2>
                <p className="text-muted-foreground text-sm">Connect instantly. Our lightning-fast text interface is designed for real-time engagement and authentic connection.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function ShagleAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

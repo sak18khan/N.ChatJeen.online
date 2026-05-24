@@ -1,8 +1,14 @@
-'use client';
-
-import { motion } from 'framer-motion';
+import type { Metadata } from 'next';
 import { Shield, Users, Heart, Flag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Community Guidelines | Safe Anonymous Chat | ChatJeen',
+  description: 'Read the ChatJeen community guidelines. Help us keep our anonymous chat rooms safe, respectful, and clean for everyone.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/guidelines'
+  }
+};
 
 export default function GuidelinesPage() {
     return (
@@ -45,19 +51,16 @@ export default function GuidelinesPage() {
                             desc: "Use the report button if you encounter someone breaking these rules. Our team reviews flags 24/7 to maintain the integrity of the arena."
                         }
                     ].map((item, i) => (
-                        <motion.div 
+                        <div 
                             key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="p-8 bg-card border border-border rounded-2xl shadow-sm space-y-4"
+                            className="p-8 bg-card border border-border rounded-2xl shadow-sm space-y-4 transition-all duration-300 hover:border-primary/20"
                         >
                             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                 <item.icon className="w-6 h-6" />
                             </div>
                             <h2 className="text-2xl font-bold tracking-tight">{item.title}</h2>
                             <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
-                        </motion.div>
+                        </div>
                     ))}
                 </section>
 

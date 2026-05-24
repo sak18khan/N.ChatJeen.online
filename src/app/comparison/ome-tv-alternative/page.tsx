@@ -106,17 +106,17 @@ export default function OmeTvAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Social Logins</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">No Social Logins</h2>
                <p className="text-muted-foreground text-sm">Unlike OmeTV which often forces you to link an account, ChatJeen respects your privacy. Open the site and start chatting anonymously.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Paywalls</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Zero Paywalls</h2>
                <p className="text-muted-foreground text-sm">We don't use 'coins' or 'VIP' subscriptions. Every user gets the same high-quality matchmaking and connection speed.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Ads</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">No Ads</h2>
                <p className="text-muted-foreground text-sm">Enjoy an uninterrupted chatting session. No banner ads, no popups, just a clean interface designed for conversation.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function OmeTvAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

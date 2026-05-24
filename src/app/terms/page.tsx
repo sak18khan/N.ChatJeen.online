@@ -1,8 +1,14 @@
-'use client';
-
-import { motion } from 'framer-motion';
+import type { Metadata } from 'next';
 import { Gavel, CheckCircle, Scale, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | ChatJeen Anonymous Chat',
+  description: 'Review the Terms of Service for using ChatJeen. Read our legal frameworks, disclaimer of liability, and rules for conduct.',
+  alternates: {
+    canonical: 'https://www.chatjeen.online/terms'
+  }
+};
 
 export default function TermsPage() {
     return (
@@ -23,7 +29,7 @@ export default function TermsPage() {
                 </header>
 
                 <section className="space-y-10">
-                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="space-y-4">
+                    <div className="space-y-4">
                         <div className="flex items-center gap-3 text-primary">
                             <Gavel className="w-6 h-6" />
                             <h2 className="text-2xl font-bold">1. Acceptance of Terms</h2>
@@ -31,9 +37,9 @@ export default function TermsPage() {
                         <p className="text-muted-foreground leading-relaxed">
                             By accessing ChatJeen, you agree to bound by these terms. This is a platform for anonymous chat and gaming. Users must be at least 18 years of age (or the age of majority in their jurisdiction).
                         </p>
-                    </motion.div>
+                    </div>
 
-                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="space-y-4">
+                    <div className="space-y-4">
                         <div className="flex items-center gap-3 text-primary">
                             <CheckCircle className="w-6 h-6" />
                             <h2 className="text-2xl font-bold">2. User Conduct</h2>
@@ -41,9 +47,9 @@ export default function TermsPage() {
                         <p className="text-muted-foreground leading-relaxed">
                             You are responsible for your interactions. Any illegal activity, harassment, or attempt to circumvent security measures will lead to instant termination of access. Anonymity is not a license for misconduct.
                         </p>
-                    </motion.div>
+                    </div>
 
-                    <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="space-y-4">
+                    <div className="space-y-4">
                         <div className="flex items-center gap-3 text-primary">
                             <Scale className="w-6 h-6" />
                             <h2 className="text-2xl font-bold">3. Disclaimer of Liability</h2>
@@ -51,7 +57,7 @@ export default function TermsPage() {
                         <p className="text-muted-foreground leading-relaxed">
                             ChatJeen provides the service "as is." We do not monitor every real-time interaction and are not liable for user-generated content or interactions. Play responsibly.
                         </p>
-                    </motion.div>
+                    </div>
                 </section>
 
                 <footer className="pt-12 border-t border-border">

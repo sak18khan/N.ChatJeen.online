@@ -28,17 +28,17 @@ export default function FreeChatRoomsPage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Cost, Ever</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Zero Cost, Ever</h2>
               <p className="text-muted-foreground text-sm">We believe connection should be accessible to everyone. All core features on ChatJeen are free to use.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <Shield className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Premium Security</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Premium Security</h2>
               <p className="text-muted-foreground text-sm">Free shouldn't mean unsafe. We invest heavily in moderation and encryption to keep our free chat rooms secure.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
               <MessagesSquare className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Unlimited Messages</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Unlimited Messages</h2>
               <p className="text-muted-foreground text-sm">Type away without worrying about message limits or time restrictions. Talk for as long as you want.</p>
            </div>
         </section>

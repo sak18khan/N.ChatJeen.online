@@ -106,17 +106,17 @@ export default function OmegleAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Chat</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Better Chat</h2>
                <p className="text-muted-foreground text-sm">Real-time, instant matching with people who share your interests.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Instant Matching</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Instant Matching</h2>
                <p className="text-muted-foreground text-sm">Our smart matchmaker pairs you with the perfect conversation partner in seconds.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Registration</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Zero Registration</h2>
                <p className="text-muted-foreground text-sm">Jump straight into the action. No email, no password, no hassle.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function OmegleAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

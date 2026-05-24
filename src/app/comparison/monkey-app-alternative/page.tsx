@@ -106,17 +106,17 @@ export default function MonkeyAppAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Download Required</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">No Download Required</h2>
                <p className="text-muted-foreground text-sm">Save your storage space. ChatJeen works flawlessly on Safari, Chrome, and any modern mobile browser without needing an installation.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Don't Link Your Snap</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Don't Link Your Snap</h2>
                <p className="text-muted-foreground text-sm">Keep your personal social media private. Unlike Monkey which encourages linking external profiles, we champion complete anonymity.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Better Conversations</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Better Conversations</h2>
                <p className="text-muted-foreground text-sm">Skip the superficial 15-second video judgments. Jump into a text chat where personality actually matters.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function MonkeyAppAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

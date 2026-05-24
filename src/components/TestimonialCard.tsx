@@ -56,10 +56,10 @@ export default function TestimonialCard({ content, author, age, avatarColor = '#
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#22c55e] rounded-full border-[2.5px] border-[#111111]" />
                 </div>
                 <div className="flex-1 flex flex-col justify-center">
-                    <h4 className="font-bold text-white text-[15px] tracking-tight">{author}, {age}</h4>
+                    <h3 className="font-bold text-white text-[15px] tracking-tight">{author}, {age}</h3>
                     <div className="flex items-center gap-1 mt-0.5">
                         <Check className="w-3.5 h-3.5 text-yellow-400 stroke-[3]" />
-                        <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Verified User</p>
+                        <p className="text-white/55 text-[10px] font-black uppercase tracking-widest">Verified User</p>
                     </div>
                 </div>
             </div>

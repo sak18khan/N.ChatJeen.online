@@ -1,3 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /matching
+Disallow: /text/
+Disallow: /social-chat/
 Sitemap: https://www.chatjeen.online/sitemap.xml

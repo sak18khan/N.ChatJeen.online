@@ -106,17 +106,17 @@ export default function ChatrandomAlternativePage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <Zap className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Modern Tech Stack</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Modern Tech Stack</h2>
                <p className="text-muted-foreground text-sm">Built on cutting-edge web technologies, ChatJeen feels snappy and responsive, unlike older legacy platforms.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <ShieldCheck className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">No Intrusive Upsells</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">No Intrusive Upsells</h2>
                <p className="text-muted-foreground text-sm">We don't bombard you with popups asking you to pay for 'gender filters' or 'VIP status'. Just pure, uncompromising chat.</p>
             </div>
             <div className="p-8 bg-card border border-border rounded-3xl space-y-4">
                <MessageCircle className="w-10 h-10 text-primary" />
-               <h3 className="text-xl font-bold uppercase italic tracking-tight">Text Excellence</h3>
+               <h2 className="text-xl font-bold uppercase italic tracking-tight">Text Excellence</h2>
                <p className="text-muted-foreground text-sm">Instead of glitchy video feeds, we focus on providing the absolute best encrypted Text Chat experience on the market.</p>
             </div>
         </section>
@@ -150,7 +150,7 @@ export default function ChatrandomAlternativePage() {
                 style={{width:"100%",maxWidth:"300px",minHeight:"250px",
                        margin:"1rem auto",background:"#111",border:"1px dashed #333",
                        display:"flex",alignItems:"center",justifyContent:"center",
-                       color:"#555",fontSize:"12px"}}>
+                       color:"#a3a3a3",fontSize:"12px"}}>
              Advertisement
            </div>
         </section>

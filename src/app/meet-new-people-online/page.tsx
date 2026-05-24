@@ -28,22 +28,22 @@ export default function MeetNewPeoplePage() {
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm">
               <HeartHandshake className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Authentic Connections</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Authentic Connections</h2>
               <p className="text-muted-foreground text-sm">Without profiles or pictures to judge, connections on ChatJeen are based entirely on personality and conversation.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm">
               <MapPin className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Global Reach</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Global Reach</h2>
               <p className="text-muted-foreground text-sm">Expand your worldview. You could be talking to a student in Tokyo one minute, and an artist in Paris the next.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm">
               <Sparkles className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Spontaneous Fun</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Spontaneous Fun</h2>
               <p className="text-muted-foreground text-sm">Every click of the "Skip" button brings a brand new interaction. The excitement of the unknown is the core ChatJeen experience.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm">
               <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Zero Barrier to Entry</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Zero Barrier to Entry</h2>
               <p className="text-muted-foreground text-sm">No accounts to create, no email verification. Just open the site and start chatting in less than 5 seconds.</p>
            </div>
         </section>
@@ -55,9 +55,9 @@ export default function MeetNewPeoplePage() {
            </p>
            <div className="grid grid-cols-1 gap-8 text-left mt-8 max-w-xl mx-auto">
              <div className="space-y-4 bg-background p-8 rounded-3xl border border-border shadow-sm">
-               <h4 className="font-bold text-2xl uppercase italic text-primary flex items-center gap-2">
+               <h3 className="font-bold text-2xl uppercase italic text-primary flex items-center gap-2">
                  <MessageCircle className="w-6 h-6"/> Text Chat
-               </h4>
+               </h3>
                <p className="text-muted-foreground">Fast, casual, and low-pressure. Ideal for quick check-ins, practicing languages, or chatting when you need to be quiet.</p>
                <Link href="/matching?mode=text" className="inline-block mt-4 text-sm font-bold uppercase tracking-widest text-primary hover:underline">
                   Start Texting →

@@ -28,22 +28,22 @@ export default function TalkToStrangersPage() {
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-6">
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm hover:shadow-md transition-shadow">
               <Globe className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Worldwide Reach</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Worldwide Reach</h2>
               <p className="text-muted-foreground text-sm">Expand your horizons. Our community spans across continents, allowing you to learn about new cultures and perspectives directly from locals.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm hover:shadow-md transition-shadow">
               <Users className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Vibrant Community</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Vibrant Community</h2>
               <p className="text-muted-foreground text-sm">Whether you want to deeply dissect philosophy at 3 AM or just share a quick laugh, there is always someone ready to talk when you are.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm hover:shadow-md transition-shadow">
               <Zap className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Lightning Fast</h2>
               <p className="text-muted-foreground text-sm">Skip the profile building and swiping. Use our instant matching system to begin a conversation immediately.</p>
            </div>
            <div className="p-8 bg-card border border-border rounded-3xl space-y-4 shadow-sm hover:shadow-md transition-shadow">
               <Shield className="w-10 h-10 text-primary" />
-              <h3 className="text-xl font-bold uppercase italic tracking-tight">Safe Environment</h3>
+              <h2 className="text-xl font-bold uppercase italic tracking-tight">Safe Environment</h2>
               <p className="text-muted-foreground text-sm">We proactively moderate the platform to keep the community healthy. Talk to strangers without compromising your security.</p>
            </div>
         </section>
