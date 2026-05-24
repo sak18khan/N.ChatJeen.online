@@ -1,7 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
 import PwaBanner from "@/components/PwaBanner";
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "ChatJeen | Meet New People Safely & Anonymously",
@@ -61,7 +74,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="antialiased selection:bg-primary/20">
+      <body className={`${plusJakarta.variable} ${outfit.variable} antialiased selection:bg-primary/20 font-sans`}>
         {children}
         <PwaBanner />
         <Script

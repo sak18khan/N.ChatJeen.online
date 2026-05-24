@@ -200,32 +200,32 @@ export default function HomeClient() {
       </header>
 
       {/* 2. FIRST FOLD: HERO SECTION */}
-      <section className="relative min-h-[calc(100vh-3.5rem)] flex items-center justify-center py-12 px-6 overflow-hidden">
+      <section className="relative min-h-[calc(100vh-3.5rem)] flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 overflow-hidden">
         {/* Subtle Background Glows */}
         <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-yellow-400/5 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute top-1/3 right-1/4 translate-x-1/2 w-[250px] h-[250px] bg-[#FF4B4B]/5 rounded-full blur-[100px] pointer-events-none" />
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full max-w-6xl relative z-10 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 w-full max-w-6xl relative z-10 items-center">
           
           {/* LEFT COLUMN: BRANDING & HEADLINES */}
-          <div className="lg:col-span-5 flex flex-col gap-6 items-center lg:items-start text-center lg:text-left">
+          <div className="lg:col-span-5 flex flex-col gap-6 items-center lg:items-start text-center lg:text-left pt-4 lg:pt-0">
             <motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-[0_0_30px_rgba(250,204,21,0.2)] flex items-center justify-center mb-2"
+              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-[0_0_30px_rgba(250,204,21,0.2)] flex items-center justify-center mb-1"
             >
-              <MessageCircle className="w-10 h-10 text-black fill-black/10" />
+              <MessageCircle className="w-8 h-8 sm:w-10 sm:h-10 text-black fill-black/10" />
             </motion.div>
 
             <div className="space-y-3">
-              <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase italic leading-none">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter uppercase italic leading-none">
                 Chat<span className="text-yellow-400 not-italic">Jeen</span>
               </h2>
-              <p className="text-[12px] font-bold text-white/40 uppercase tracking-[0.2em]">Safe. Fun. Gamified.</p>
+              <p className="text-[10px] sm:text-[12px] font-bold text-white/40 uppercase tracking-[0.2em]">Safe. Fun. Gamified.</p>
             </div>
 
-            <p className="text-white/60 text-sm leading-relaxed max-w-sm">
+            <p className="text-white/60 text-xs sm:text-sm leading-relaxed max-w-sm">
               Connect with strangers globally based on your specific vibe. Earn points, level up, and unlock custom features as you chat. Clean and secure.
             </p>
 
@@ -249,65 +249,69 @@ export default function HomeClient() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="w-full max-w-xl bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl relative"
+              className="w-full max-w-xl bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-[2rem] p-5 sm:p-8 shadow-2xl relative"
             >
-              <h3 className="text-xl font-black uppercase tracking-tight italic mb-6 text-white flex items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight italic mb-6 text-white flex items-center gap-2">
                 <Zap className="w-5 h-5 text-yellow-400" /> Set Your Connection Vibe
               </h3>
 
               {/* VIBE SELECTOR GRID */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
                 {VIBES.map((vibe) => (
-                  <button
+                  <motion.button
                     key={vibe.id}
                     onClick={() => {
                       setSelectedVibe(vibe.id);
                       setSelectedAnswer(null);
                     }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     className={cn(
-                      "flex flex-col items-center justify-center p-3 text-center rounded-2xl border transition-all text-xs gap-1 group relative overflow-hidden",
+                      "flex flex-col items-center justify-center p-3.5 text-center rounded-2xl border transition-all text-xs gap-1 group relative overflow-hidden cursor-pointer",
                       selectedVibe === vibe.id 
-                        ? "bg-yellow-400 text-black border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]" 
+                        ? "bg-yellow-400 text-black border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.3)]" 
                         : "bg-white/[0.02] border-white/5 text-white/70 hover:bg-white/5 hover:border-white/10"
                     )}
                   >
                     <span className="font-bold text-[13px]">{vibe.name.split(' ')[0]}</span>
                     <span className="text-[9px] opacity-60 font-semibold">{vibe.name.split(' ').slice(1).join(' ')}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
-              {/* INTEREST TAGS SELECTOR (TASK 1) */}
+              {/* INTEREST TAGS SELECTOR */}
               <div className="mb-6 space-y-2">
                 <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400">Match by Interests</span>
                 <div className="flex flex-wrap gap-2">
                   {INTEREST_TAGS.map((tag) => {
                     const isSelected = selectedInterests.includes(tag);
                     return (
-                      <button
+                      <motion.button
                         key={tag}
                         onClick={() => handleInterestToggle(tag)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-300",
+                          "px-3.5 py-2 rounded-full text-[11px] font-bold border transition-all duration-300 cursor-pointer",
                           isSelected
-                            ? "bg-yellow-400 text-black border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.2)]"
+                            ? "bg-yellow-400 text-black border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.25)]"
                             : "bg-[#111] border-white/5 text-white/60 hover:bg-white/5 hover:border-white/10"
                         )}
                       >
                         {tag}
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* COUNTRY FILTER DROPDOWN (TASK 3) */}
+              {/* COUNTRY FILTER DROPDOWN */}
               <div className="mb-6 space-y-2" ref={dropdownRef}>
                 <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400">Country Preference</span>
                 <div className="relative">
                   <button
                     onClick={() => setIsCountryOpen(!isCountryOpen)}
-                    className="w-full bg-[#111] border border-white/5 rounded-xl px-4 py-3 text-xs text-white/80 hover:text-white transition-colors flex items-center justify-between"
+                    className="w-full bg-[#111] border border-white/5 rounded-xl px-4 py-3.5 text-xs text-white/80 hover:text-white transition-colors flex items-center justify-between cursor-pointer"
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-base">{selectedCountryDetails ? selectedCountryDetails.flag : '🌍'}</span>
@@ -326,7 +330,7 @@ export default function HomeClient() {
                       >
                         <button
                           onClick={() => handleCountrySelect('Anywhere')}
-                          className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"
+                          className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2 cursor-pointer"
                         >
                           <span className="text-base">🌍</span>
                           <span>Anywhere</span>
@@ -335,7 +339,7 @@ export default function HomeClient() {
                           <button
                             key={c.code}
                             onClick={() => handleCountrySelect(c.code)}
-                            className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-white/5 transition-colors flex items-center gap-2"
+                            className="w-full px-4 py-3 text-left text-xs font-bold hover:bg-white/5 transition-colors flex items-center gap-2 cursor-pointer"
                           >
                             <span className="text-base">{c.flag}</span>
                             <span>{c.name}</span>
@@ -357,14 +361,14 @@ export default function HomeClient() {
                     exit={{ opacity: 0, y: -10 }}
                     className="p-5 rounded-2xl bg-white/[0.03] border border-white/5 mb-6 flex flex-col gap-4"
                   >
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1.5">
                       <span className="text-[9px] font-black uppercase tracking-widest text-yellow-400">Debate Topic</span>
                       <input 
                         type="text" 
                         value={debateTopic}
                         onChange={(e) => setDebateTopic(e.target.value)}
                         placeholder="Type a topic to debate..."
-                        className="bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-yellow-400/50 w-full"
+                        className="bg-black/50 border border-white/10 rounded-xl px-4 py-3.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-yellow-400/50 w-full"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -375,7 +379,7 @@ export default function HomeClient() {
                             key={stance}
                             onClick={() => setSelectedStance(stance)}
                             className={cn(
-                              "py-2 rounded-xl text-xs font-bold border transition-colors",
+                              "py-3 rounded-xl text-xs font-bold border transition-colors cursor-pointer",
                               selectedStance === stance
                                 ? "bg-white text-black border-white"
                                 : "bg-black/40 border-white/10 text-white/50 hover:bg-white/5"
@@ -408,7 +412,7 @@ export default function HomeClient() {
                             key={opt}
                             onClick={() => setSelectedAnswer(opt)}
                             className={cn(
-                              "px-4 py-3 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between",
+                              "px-4 py-3 rounded-xl text-xs font-bold text-left border transition-all flex items-center justify-between cursor-pointer",
                               selectedAnswer === opt
                                 ? "bg-yellow-400/10 border-yellow-400 text-yellow-400"
                                 : "bg-black/40 border-white/10 text-white/50 hover:bg-white/5"
@@ -425,13 +429,15 @@ export default function HomeClient() {
               </AnimatePresence>
 
               {/* SUBMIT BUTTON */}
-              <button 
+              <motion.button 
                 onClick={handleStart}
-                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black text-sm py-4 rounded-full shadow-[0_15px_30px_rgba(250,204,21,0.15)] active:scale-98 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black text-sm py-4 rounded-full shadow-[0_15px_30px_rgba(250,204,21,0.15)] transition-all uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>Find Match</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </motion.div>
           </div>
 

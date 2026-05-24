@@ -14,20 +14,23 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-card: var(--card);
-  --radius-lg: 0.75rem;
+  --radius-lg: 1.25rem;
+  
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 :root {
-  --background: #000000;
+  --background: #030303; /* Rich modern near-black */
   --foreground: #F8FAFC;
-  --primary: #FACC15; /* Yellow */
+  --primary: #FACC15; /* Glowing Amber Yellow */
   --primary-foreground: #000000;
-  --accent: #111111;
-  --muted: #0A0A0A;
+  --accent: #0C0C0E;
+  --muted: #070709;
   --muted-foreground: #94A3B8;
-  --border: #1A1A1A;
-  --card: #050505;
-  --radius: 0.75rem;
+  --border: rgba(255, 255, 255, 0.05);
+  --card: rgba(12, 12, 14, 0.6);
+  --radius: 1.25rem; /* Modern rounded corners */
 }
 
 @layer base {
@@ -35,20 +38,98 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground transition-colors duration-300;
+    @apply bg-background text-foreground transition-colors duration-300 font-sans antialiased;
+  }
+  
+  /* Fluid Header Typography & Displays */
+  h1, h2, h3 {
+    font-family: var(--font-outfit), sans-serif;
+    @apply tracking-tight font-black uppercase italic;
+  }
+
+  /* Radial Backdrops for all main containers */
+  main {
+    position: relative;
+    background-color: var(--background);
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(250, 204, 21, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.025) 0%, transparent 45%);
+    background-attachment: fixed;
   }
 }
 
+/* Glassmorphism Card System (Tasks 1-7 layout upgrades) */
+.bg-card, .card-clean {
+  background-color: rgba(255, 255, 255, 0.015) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: var(--radius);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bg-card:hover, .card-clean:hover {
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  border-color: rgba(250, 204, 21, 0.15) !important;
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 0, 0, 0.8),
+    0 0 50px -10px rgba(250, 204, 21, 0.03);
+}
+
+/* Glowing Primary Actions */
+button.bg-primary, .btn-primary {
+  background: linear-gradient(135deg, #FACC15 0%, #EAB308 100%) !important;
+  color: #000000 !important;
+  border: none !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em;
+  border-radius: 9999px !important; /* Premium rounded pills */
+  box-shadow: 0 10px 25px -5px rgba(250, 204, 21, 0.25) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+button.bg-primary:hover, .btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 15px 30px -5px rgba(250, 204, 21, 0.4),
+    0 0 20px 0 rgba(250, 204, 21, 0.2) !important;
+}
+
+button.bg-primary:active, .btn-primary:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Glassmorphic Tables (Comparison pages) */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+thead tr {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+th {
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 1rem 1.5rem !important;
+}
+
+td {
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+tr:hover td {
+  background-color: rgba(255, 255, 255, 0.01) !important;
+  color: #ffffff !important;
+}
+
 .secure-shadow {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
-
-.btn-primary {
-  @apply bg-primary text-primary-foreground hover:opacity-90 transition-all font-semibold rounded-lg px-6 py-2 shadow-sm;
-}
-
-.card-clean {
-  @apply bg-card border border-border rounded-xl p-6 shadow-sm;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
 }
 
 @layer utilities {
