@@ -57,6 +57,18 @@ export function getCountryInitials(code: string): string {
     return map[upperCode] || (upperCode.length === 2 ? upperCode + '?' : upperCode);
 }
 
+// Helper to map 2-letter code to country name
+export function getCountryName(code: string): string {
+    const names: Record<string, string> = {
+        'US': 'United States', 'GB': 'United Kingdom', 'CA': 'Canada', 'AU': 'Australia',
+        'DE': 'Germany', 'FR': 'France', 'IN': 'India', 'CN': 'China', 'JP': 'Japan',
+        'BR': 'Brazil', 'RU': 'Russia', 'ES': 'Spain', 'IT': 'Italy', 'MX': 'Mexico',
+        'ID': 'Indonesia', 'PK': 'Pakistan', 'NG': 'Nigeria', 'BD': 'Bangladesh',
+        'TR': 'Turkey', 'VN': 'Vietnam'
+    };
+    return names[code.toUpperCase()] || 'Global Match';
+}
+
 export async function detectIdentity(userId?: string): Promise<UserIdentity> {
     let karma = 0;
     if (userId) {
@@ -83,29 +95,32 @@ export async function detectIdentity(userId?: string): Promise<UserIdentity> {
     };
 
     try {
-        // Primary API with CORS handled typically
-        const response = await fetch('https://ipapi.co/json/');
-        if (!response.ok) throw new Error('ipapi failed');
+        // Primary API: freeipapi (CORS-friendly, free, modern)
+        const response = await fetch('https://freeipapi.com/api/json');
+        if (!response.ok) throw new Error('freeipapi failed');
         const data = await response.json();
         
+        const countryCode = data.countryCode || 'UN';
         return {
             ...defaultIdentity,
-            countryCode: data.country_code || 'UN',
-            countryInitial: data.country_code_iso3 || getCountryInitials(data.country_code || 'UN'),
-            country: data.country_name || 'Global Match',
-            flag: data.country_code ? getFlagEmoji(data.country_code) : '🌐',
+            countryCode: countryCode,
+            countryInitial: getCountryInitials(countryCode),
+            country: data.countryName || getCountryName(countryCode),
+            flag: countryCode && countryCode !== 'UN' ? getFlagEmoji(countryCode) : '🌐',
         };
     } catch (error) {
         try {
-            // Secondary fallback API
-            const fallback = await fetch('https://ipwho.is/');
+            // Secondary fallback API: country.is (CORS-friendly, returns just country code)
+            const fallback = await fetch('https://api.country.is/');
+            if (!fallback.ok) throw new Error('country.is failed');
             const fData = await fallback.json();
+            const countryCode = fData.country || 'UN';
             return {
                 ...defaultIdentity,
-                countryCode: fData.country_code || 'UN',
-                countryInitial: fData.country_code_iso3 || getCountryInitials(fData.country_code || 'UN'),
-                country: fData.country || 'Global Match',
-                flag: fData.country_code ? getFlagEmoji(fData.country_code) : '🌐',
+                countryCode: countryCode,
+                countryInitial: getCountryInitials(countryCode),
+                country: getCountryName(countryCode),
+                flag: countryCode && countryCode !== 'UN' ? getFlagEmoji(countryCode) : '🌐',
             };
         } catch (fError) {
             console.warn('All Geo-IP Detections failed (likely blocked by adblocker):', fError);
