@@ -6,8 +6,7 @@ import { motion } from 'framer-motion';
 import { Zap, ShieldCheck, Laptop, AlertCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { rtdb } from '@/lib/firebaseClient';
-import { ref, onValue, off, remove } from 'firebase/database';
-import { findMatch, ChatMode, updatePing } from '@/lib/matching';
+import { ChatMode } from '@/lib/matching';
 import { Button } from '@/components/ui/button';
 
 function MatchingContent() {
@@ -58,7 +57,7 @@ function MatchingContent() {
         
         setUserId(myId);
         
-        let pingInterval: NodeJS.Timeout;
+        let pollInterval: NodeJS.Timeout;
         let myQueueRef: any;
 
         const startMatching = async () => {
@@ -82,49 +81,81 @@ function MatchingContent() {
             }
             localStorage.setItem('chatjeen_last_match_time', Date.now().toString());
 
-            try {
-                // Prepare answers or debate configurations
-                const answers = questionText && answerText ? { question: questionText, answer: answerText } : null;
-                const debate = vibe === 'Debate' ? { topic: debateTopic, stance: debateStance } : null;
+            const answers = questionText && answerText ? { question: questionText, answer: answerText } : null;
+            const debate = vibe === 'Debate' ? { topic: debateTopic, stance: debateStance } : null;
 
-                // Start heartbeat ping and state sync
-                pingInterval = setInterval(() => {
-                    updatePing(myId);
+            // Helper to call server-side matchmaking API
+            const executeMatchCall = async () => {
+                try {
+                    const res = await fetch('/api/match', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: myId,
+                            mode,
+                            vibe,
+                            interests,
+                            country,
+                            debate,
+                            answers
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data?.status === 'matched' && data?.roomId) {
+                            if (pollInterval) clearInterval(pollInterval);
+                            if (myQueueRef) {
+                                const { off: dbOff } = await import('firebase/database');
+                                dbOff(myQueueRef);
+                            }
+                            router.push(`/${mode}/${data.roomId}?me=${myId}`);
+                            return true;
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Matchmaking request error:", err);
+                }
+                return false;
+            };
+
+            try {
+                // 1. Subscribe to Firebase waitlist path as the instant real-time channel
+                const { ref: dbRef, onValue: dbOnValue } = await import('firebase/database');
+                myQueueRef = dbRef(rtdb, `queue/${myId}`);
+                dbOnValue(myQueueRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        const val = snapshot.val();
+                        if (val.status === 'matched' && val.roomId) {
+                            if (pollInterval) clearInterval(pollInterval);
+                            import('firebase/database').then(({ off: dbOff }) => {
+                                dbOff(myQueueRef);
+                            });
+                            router.push(`/${mode}/${val.roomId}?me=${myId}`);
+                        }
+                    }
+                }, (err) => {
+                    console.error("Queue subscription error:", err);
+                });
+
+                // 2. Perform initial server-side match check
+                const isMatched = await executeMatchCall();
+                if (isMatched) return;
+
+                // 3. Fallback polling loop (every 4 seconds) to refresh heartbeat and backup check
+                pollInterval = setInterval(async () => {
+                    await executeMatchCall();
+                    // Also refresh user-state in Redis
                     fetch('/api/user-state', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId: myId, state: 'WAITING' })
                     }).catch(console.warn);
-                }, 10000);
+                }, 4000);
 
-                // 1. Try immediate match & insert waitlist
-                const room = await findMatch(myId, mode, vibe, answers, debate, interests, country);
-                
-                if (room) {
-                    clearInterval(pingInterval);
-                    router.push(`/${mode}/${room.id}?me=${myId}`);
-                } else {
-                    // 2. Subscribe for match via Firebase /queue/${myId}
-                    myQueueRef = ref(rtdb, `queue/${myId}`);
-                    onValue(myQueueRef, (snapshot) => {
-                        if (snapshot.exists()) {
-                            const val = snapshot.val();
-                            if (val.status === 'matched' && val.roomId) {
-                                clearInterval(pingInterval);
-                                off(myQueueRef);
-                                // Cleanup waitlist entry
-                                remove(myQueueRef);
-                                router.push(`/${mode}/${val.roomId}?me=${myId}`);
-                            }
-                        }
-                    }, (err) => {
-                        console.error("Queue sub failed:", err);
-                        setError(`Database connection failed: ${err.message}. Please configure Firebase Realtime Database Rules to public (read/write = true).`);
-                    });
-                }
             } catch (err: any) {
-                console.error("Firebase Matching Error:", err);
-                setError(`Connection failed: ${err.message || err}. Please ensure your Firebase Realtime Database rules allow read and write access.`);
+                console.error("Matchmaking initialization error:", err);
+                setError(`Connection failed: ${err.message || err}`);
             }
         };
 
@@ -132,16 +163,16 @@ function MatchingContent() {
 
         // Proper React Cleanup
         return () => {
-            if (pingInterval) clearInterval(pingInterval);
+            if (pollInterval) clearInterval(pollInterval);
             if (myQueueRef) {
-                off(myQueueRef);
-                remove(myQueueRef); // Remove from queue on exit
+                import('firebase/database').then(({ off: dbOff }) => {
+                    dbOff(myQueueRef);
+                });
             }
-            // Clean up interests and country keys when leaving search
-            import('firebase/database').then(({ ref: dbRef, remove: dbRemove }) => {
-                dbRemove(dbRef(rtdb, `interests/${myId}`));
-                dbRemove(dbRef(rtdb, `country/${myId}`));
-            });
+            
+            // Clean up waitlist presence asynchronously via DELETE API
+            fetch(`/api/match?userId=${myId}`, { method: 'DELETE' }).catch(console.warn);
+
             // Clear status in Redis
             fetch('/api/user-state', {
                 method: 'POST',
